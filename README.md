@@ -10,3 +10,13 @@ sudo apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-d
 sur les autres distributions, consulter le github de raylibb : 
 > https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
 
+
+Compilation: \
+Il faut télécharger raylib, puis on peut compiler le projet:
+``` sh
+cd lib/
+git clone --depth 1 https://github.com/raysan5/raylib.git raylib
+cd ..
+make
+```
+
