@@ -2,21 +2,28 @@
 Projet de Middleware Client/Serveur
 
 
-pour la compilation sur ubuntu, il faut les dépendances :
+# Clonage du repository
+Comme le fichier utilise raylib en submodule, il faut cloner le repository en mode récursif afin de cloner [raylib](https://github.com/raysan5/raylib/) également
+```sh
+git clone --recurse-submodules https://github.com/Thomas-Duthoit/IG2-GOLF.git
 ```
-sudo apt install build-essential git
-sudo apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
+
+# Dépendances
+
+Pour la compilation sur Ubuntu, il faut les dépendances :
+```sh
+apt install build-essential git
+apt install libasound2-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev libglu1-mesa-dev libxcursor-dev libxinerama-dev libwayland-dev libxkbcommon-dev
 ```
-sur les autres distributions, consulter le github de raylibb : 
+Sur d'autres distributions, consultez le github de raylib afin d'installer les packages correspondants : 
 > https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux
 
 
-Compilation: \
-Il faut télécharger raylib, puis on peut compiler le projet:
+# Compilation
+
+Dans l'archive du projet, la compilation se fait avec :
+
 ``` sh
-cd lib/
-git clone --depth 1 https://github.com/raysan5/raylib.git raylib
-cd ..
 make
 ```
 
