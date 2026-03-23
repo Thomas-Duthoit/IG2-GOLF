@@ -9,7 +9,7 @@ CCFLAGS = -Iinclude/
 LDFLAGS = -Llib/raylib/src -lraylib -lm	-ldl -lpthread -lX11
 
 
-all: raylib bin/client
+all: raylib bin/client bin/server
 
 raylib:
 	@echo "Compilation de raylib"
@@ -22,6 +22,12 @@ bin/client: src/client.c
 	mkdir -p bin
 	gcc $(CCFLAGS) src/client.c $(LDFLAGS) -o bin/client
 
+
+bin/server: src/server.c
+	@echo "Compilation du serveur"
+	mkdir -p build
+	mkdir -p bin
+	gcc $(CCFLAGS) src/server.c $(LDFLAGS) -o bin/server
 
 
 clean:
