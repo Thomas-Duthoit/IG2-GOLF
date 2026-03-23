@@ -6,7 +6,7 @@
 
 
 CCFLAGS = -Iinclude/
-LDFLAGS = -Llib/raylib/src -lraylib -lm	-ldl -lpthread -lX11
+LDFLAGS = -Llib/raylib/src -Llib/libINET/ -lraylib -lm	-ldl -lpthread -lX11 -lINET
 
 
 all: raylib bin/client bin/server
@@ -15,15 +15,28 @@ raylib:
 	@echo "Compilation de raylib"
 	cd lib/raylib/src && make PLATFORM=PLATFORM_DESKTOP
 
+session.o: src/session.c include/session.h
+	@echo "Compilation de session.o"
+	gcc -c $(CCFLAGS) src/session.c -o build/session.o
 
-bin/client: src/client.c
+data.o: src/data.c include/data.h
+	@echo "Compilation de data.o"
+	gcc -c $(CCFLAGS) src/data.c -o build/data.o
+
+libINET.a: session.o data.o
+	@echo "Compilation de libINET.a"
+	ar rcs lib/libINET/libINET.a build/session.o build/data.o
+
+
+
+bin/client: src/client.c libINET.a
 	@echo "Compilation du client"
 	mkdir -p build
 	mkdir -p bin
 	gcc $(CCFLAGS) src/client.c $(LDFLAGS) -o bin/client
 
 
-bin/server: src/server.c
+bin/server: src/server.c libINET.a
 	@echo "Compilation du serveur"
 	mkdir -p build
 	mkdir -p bin
@@ -35,3 +48,4 @@ clean:
 	cd lib/raylib/src && make clean
 
 	rm bin/*
+	rm -f lib/libINET/libINET.a
