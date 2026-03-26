@@ -28,19 +28,18 @@ libINET.a: session.o data.o
 	ar rcs lib/libINET/libINET.a build/session.o build/data.o
 
 
-
-bin/client: src/client.c libINET.a
+bin/client: src/client.c libINET.a src/reqRep.c src/dial.c src/users.c
 	@echo "Compilation du client"
 	mkdir -p build
 	mkdir -p bin
-	gcc $(CCFLAGS) src/client.c $(LDFLAGS) -o bin/client
+	gcc $(CCFLAGS) src/client.c src/reqRep.c src/dial.c src/users.c $(LDFLAGS) -DCLIENT -o bin/client
 
 
-bin/server: src/server.c libINET.a
+bin/server: src/server.c libINET.a src/reqRep.c src/dial.c src/users.c
 	@echo "Compilation du serveur"
 	mkdir -p build
 	mkdir -p bin
-	gcc $(CCFLAGS) src/server.c $(LDFLAGS) -o bin/server
+	gcc $(CCFLAGS) src/server.c src/reqRep.c src/dial.c src/users.c $(LDFLAGS) -DSERVER -o bin/server
 
 
 clean:
@@ -48,4 +47,5 @@ clean:
 	cd lib/raylib/src && make clean
 
 	rm bin/*
+	rm build/*
 	rm -f lib/libINET/libINET.a
