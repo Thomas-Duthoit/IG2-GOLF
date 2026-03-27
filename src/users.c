@@ -127,6 +127,7 @@ void lireUsers(void) {
 	FILE *fp;
 	CHECK_NULL(fp=fopen("users.dat", "r"), "--fopen()--");
 	CHECK(users.nbUsers=fread(users.tab, sizeof(user_t), MAX_USERS, fp),"--fread()--");
+	CHECK(fclose(fp),"--fclose()--");	
 
 	afficherUsers("lecture");
 }

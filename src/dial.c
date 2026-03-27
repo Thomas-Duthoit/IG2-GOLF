@@ -1,9 +1,9 @@
 #include "dial.h"
 #include "reqRep.h"
-#include "pthread.h"
-#include "string.h"
+#include <pthread.h>
+#include <string.h>
 #include "users.h"
-
+#include "data.h"
 
 #define printClt2Reg(fmt, ...) printf("\x1b[1;32mTHREAD DIAL\x1b[0m] " fmt, ##__VA_ARGS__)
 #define printReg2Clt(fmt, ...) printf("\x1b[1;35mREGISTER SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
@@ -14,7 +14,7 @@
     extern requete_t *req_send_clt2reg;
 #endif
 
-#ifdef SERVEUR
+#ifdef SERVER
     extern pthread_mutex_t MUT_USER_MANAGEMENT; 
 #endif
 
@@ -195,9 +195,13 @@ void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd) {
 
     printf("Demande d'enregistrement d'un joueur\n"); 
 
-    pthread_mutex_lock(&MUT_USER_MANAGEMENT);
-        returnValue = identifierUser(username, sd); 
-    pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+    #ifdef SERVER
+        pthread_mutex_lock(&MUT_USER_MANAGEMENT);
+
+            returnValue = identifierUser(username, sd); 
+        
+        pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+    #endif
 
     if  (returnValue != -1){
         rep->idRep = OK_REG_SERV; 
@@ -220,16 +224,22 @@ void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
     sscanf(req->optReq, "%[^:]:%c", username, (char*)&etat); 
 
     printf("%s => %c\n", username, etat); 
-
+    #ifdef SERVER
     pthread_mutex_lock(&MUT_USER_MANAGEMENT);
+    
         index = trouverUser(username); 
+
     pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+    #endif
+
     
     if(index != -1)
     {
+        #ifdef SERVER
         pthread_mutex_lock(&MUT_USER_MANAGEMENT);
             modifierEtat(index, etat); 
         pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+        #endif
 
         rep->idRep = OK_REG_SERV; 
         strcpy(rep->optRep, ""); 
@@ -251,10 +261,11 @@ void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep){
     printf("Envoi de la liste des clients en état hôtes");
     char * listPseudo = (char *)malloc(sizeof(char)*(MAX_NAME+1)*MAX_USERS); 
     strcpy(listPseudo, "");
-
+    #ifdef SERVER
     pthread_mutex_lock(&MUT_USER_MANAGEMENT);
         getListPseudoByState(ETAT_HOST, listPseudo); 
     pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+    #endif
 
     printf("Liste des hôtes : %s\n", listPseudo); 
     
@@ -274,14 +285,18 @@ void traiterDIS_PLAYER(requete_t * req, reponse_t * rep){
 
     printf("username : %s\n", username); 
 
+    #ifdef SERVER
     pthread_mutex_lock(&MUT_USER_MANAGEMENT);
         index = trouverUser(username); 
     pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+    #endif
 
     if (index != -1){
-        pthread_mutex_lock(&MUT_USER_MANAGEMENT)
+        #ifdef SERVER
+        pthread_mutex_lock(&MUT_USER_MANAGEMENT); 
             deconnecterUser(index);
         pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+        #endif
         rep->idRep = OK_REG_SERV; 
         strcpy(rep->optRep, ""); 
         strcpy(rep->verbRep, "OK_REG_SERV");

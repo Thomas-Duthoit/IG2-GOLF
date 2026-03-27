@@ -1,9 +1,15 @@
 #include <stdio.h>
-#include <raylib/raylib.h>
-#include <dial.h>
-#include <pthread.h>
 #include <string.h>
-#include <users.h>
+#include <pthread.h>
+
+#include <raylib/raylib.h>
+
+#include "data.h"
+#include "session.h"
+#include "reqRep.h"
+#include "dial.h"
+#include "users.h"
+
 
 
 

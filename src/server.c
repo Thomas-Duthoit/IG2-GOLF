@@ -18,6 +18,8 @@
 #include "users.h"
 
 
+#define defaultAdrPort "0.0.0.0"
+#define defaultPort 0
 
 void installSigServer(int sigNum);
 
@@ -42,11 +44,18 @@ int main(int argc, char ** argv) {
     lireUsers();
 
     if (argc < 2) {
-        printf("Usage : %s adrIP port\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
 
-    se = creerSocketEcoute(argv[1], atoi(argv[2]));
+        printf("Usage : %s adrIP port\n", argv[0]);
+        // exit(EXIT_FAILURE);
+
+        se = creerSocketEcoute(defaultAdrPort, defaultPort); 
+
+    }
+    else{
+
+        se = creerSocketEcoute(argv[1], atoi(argv[2]));
+    
+    }
     
     while(1) {
         
