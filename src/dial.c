@@ -211,7 +211,7 @@ void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
     etat_joueur_t etat;
     int index = -1;  
 
-    sscanf(req->optReq, "%[^:]:%c", username, &etat); 
+    sscanf(req->optReq, "%[^:]:%c", username, (char*)&etat); 
 
     printf("%s => %c\n", username, etat); 
 
