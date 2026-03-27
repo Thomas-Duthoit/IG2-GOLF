@@ -14,6 +14,10 @@
     extern requete_t *req_send_clt2reg;
 #endif
 
+#ifdef SERVEUR
+    extern pthread_mutex_t MUT_USER_MANAGEMENT; 
+#endif
+
 
 void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd);
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep); 
@@ -191,7 +195,9 @@ void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd) {
 
     printf("Demande d'enregistrement d'un joueur\n"); 
 
-    returnValue = identifierUser(username, sd); 
+    pthread_mutex_lock(&MUT_USER_MANAGEMENT);
+        returnValue = identifierUser(username, sd); 
+    pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
 
     if  (returnValue != -1){
         rep->idRep = OK_REG_SERV; 
@@ -215,12 +221,15 @@ void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
 
     printf("%s => %c\n", username, etat); 
 
-    index = trouverUser(username); 
+    pthread_mutex_lock(&MUT_USER_MANAGEMENT);
+        index = trouverUser(username); 
+    pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
     
     if(index != -1)
     {
-
-        modifierEtat(index, etat); 
+        pthread_mutex_lock(&MUT_USER_MANAGEMENT);
+            modifierEtat(index, etat); 
+        pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
 
         rep->idRep = OK_REG_SERV; 
         strcpy(rep->optRep, ""); 
@@ -243,7 +252,9 @@ void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep){
     char * listPseudo = (char *)malloc(sizeof(char)*(MAX_NAME+1)*MAX_USERS); 
     strcpy(listPseudo, "");
 
-    getListPseudoByState(ETAT_HOST, listPseudo); 
+    pthread_mutex_lock(&MUT_USER_MANAGEMENT);
+        getListPseudoByState(ETAT_HOST, listPseudo); 
+    pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
 
     printf("Liste des hôtes : %s\n", listPseudo); 
     
@@ -263,10 +274,14 @@ void traiterDIS_PLAYER(requete_t * req, reponse_t * rep){
 
     printf("username : %s\n", username); 
 
-    index = trouverUser(username); 
+    pthread_mutex_lock(&MUT_USER_MANAGEMENT);
+        index = trouverUser(username); 
+    pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
 
     if (index != -1){
-        deconnecterUser(index);
+        pthread_mutex_lock(&MUT_USER_MANAGEMENT)
+            deconnecterUser(index);
+        pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
         rep->idRep = OK_REG_SERV; 
         strcpy(rep->optRep, ""); 
         strcpy(rep->verbRep, "OK_REG_SERV");

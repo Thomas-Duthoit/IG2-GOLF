@@ -150,7 +150,6 @@ void getListPseudoByState(etat_joueur_t etat, char * listePseudo){
 
 	for (int i=0; i < MAX_USERS; i++){
 		if (users.tab[i].etat==etat) {
-			printf("%s\n", users.tab[i].name); 
 			strcpy(username, users.tab[i].name); 
 			strcat(username, ":"); 
 			strcat(listePseudo, username);

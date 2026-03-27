@@ -27,6 +27,10 @@ void installSigServer(int sigNum);
 socket_t se; 
 
 
+// mutex pour la gestion des utilisateurs
+pthread_mutex_t MUT_USER_MANAGEMENT = PTHREAD_MUTEX_INITIALIZER;
+
+
 int main(int argc, char ** argv) {
     socket_t sd;
 
@@ -73,7 +77,7 @@ void deroute (int sigNum) {
         case SIGUSR1 : 
             close(se.fd);
             ecrireUsers();
-            printf("Fin du serveur [%d]\n", getpid());
+            printf("\x1b[1;31mFin du serveur [%d]\x1b[0m\n", getpid());
             _exit(1);  // _exit plutot que exit pour que ça marche dans un contexte multithread, car on ne touche pas aux buffers stdin/stderr, et qu'il ne prend pas de verrous
             break;
     }
