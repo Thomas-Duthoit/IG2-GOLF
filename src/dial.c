@@ -1,9 +1,9 @@
-#include "dial.h"
-#include "reqRep.h"
-#include <pthread.h>
 #include <string.h>
+#include <pthread.h>
 #include "users.h"
 #include "data.h"
+#include "dial.h"
+#include "reqRep.h"
 
 #define printClt2Reg(fmt, ...) printf("\x1b[1;32mTHREAD DIAL\x1b[0m] " fmt, ##__VA_ARGS__)
 #define printReg2Clt(fmt, ...) printf("\x1b[1;35mREGISTER SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
@@ -12,6 +12,8 @@
 #ifdef CLIENT
     extern pthread_mutex_t MUT_CLT2REG;
     extern requete_t *req_send_clt2reg;
+    extern short PORT_SRV_REG;
+    extern char IP_REG[100];
 #endif
 
 #ifdef SERVER
@@ -48,7 +50,7 @@ void * dialReg2Clt(void * sd_p) {
                 
                 // Demande d'enregistrement du joueur
                 printReg2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
-                printReg2Clt("Options : %s\n", rep.optRep);
+                printReg2Clt("Options : %s\n", req.optReq);
                 traiterREG_PLAYER(&req, &rep, &sd); 
 
                 break;
@@ -57,7 +59,7 @@ void * dialReg2Clt(void * sd_p) {
 
                 // Déconnexion d'un joueur
                 printReg2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
-                printReg2Clt("Options : %s\n", rep.optRep);
+                printReg2Clt("Options : %s\n", req.optReq);
                 traiterDIS_PLAYER(&req, &rep); 
 
                 break;
@@ -74,7 +76,7 @@ void * dialReg2Clt(void * sd_p) {
                 
                 // Changement de l'état du client 
                 printReg2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
-                printReg2Clt("Options : %s\n", rep.optRep);
+                printReg2Clt("Options : %s\n", req.optReq);
                 traiterUPDT_CLIENT_STATE(&req, &rep); 
 
                 break;
@@ -98,7 +100,13 @@ void * dialReg2Clt(void * sd_p) {
 
 void * dialClt2Reg(void * sa_p) {
 
-    socket_t sa = *((socket_t*)sa_p);
+    // socket_t sa = *((socket_t*)sa_p);
+
+    socket_t sa;
+    
+    #ifdef CLIENT
+    sa = connecterClt2Srv(IP_REG, PORT_SRV_REG);
+    #endif
 
     requete_t req;
     reponse_t rep;
@@ -188,20 +196,29 @@ void * dialClt2Reg(void * sa_p) {
 
 
 
+// TRAITEMENT SERVEUR ENREGISTREMENT
+
 void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd) {
     name_t username; 
-    strcpy(username, req->optReq); 
+    //strcpy(username, req->optReq); 
     int returnValue;
+    char * portEph = (char *)malloc(sizeof(char)*10); 
+    short port; 
+    char * adrIP = (char *)malloc(sizeof(char)*16); 
+    
+    printReg2Clt("Demande d'enregistrement d'un joueur\n"); 
 
-    printf("Demande d'enregistrement d'un joueur\n"); 
+    sscanf(req->optReq, "%[^:]:%[^:]:%[^\n]", username, adrIP, portEph); 
+
+    port = atoi(portEph); 
 
     #ifdef SERVER
         pthread_mutex_lock(&MUT_USER_MANAGEMENT);
 
-            returnValue = identifierUser(username, sd); 
-        
+            returnValue = identifierUser(username, adrIP, port); 
+
         pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
-    #endif
+    #endif 
 
     if  (returnValue != -1){
         rep->idRep = OK_REG_SERV; 

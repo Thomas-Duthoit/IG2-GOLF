@@ -1,6 +1,11 @@
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <pthread.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #include <raylib/raylib.h>
 
@@ -11,18 +16,32 @@
 #include "users.h"
 
 
+#define printAppSrv(fmt, ...) printf("\x1b[1;36mAPP SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
 
 
-// requête pour envoie sur 
+
+void * serv_applicatif(void * arg);
+int get_local_ip(char *buffer);
+
+
+
 requete_t *req_send_clt2reg = NULL;
-
-// mutex pour la comm avec le serveur
 pthread_mutex_t MUT_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
+
+short PORT_SRV_REG;
+short PORT_SRV_APP = 0;
+char INTERFACE[50]; 
+char IP_REG[100];
+char IP_LOC[100];
+
+
+
+socket_t sa_reg;
+socket_t se;
 
 
 
 int main(int argc, char **argv) {
-    printf("Hello, MCS !\n");
     
     // InitWindow(800, 450, "Hello, MCS !");
 
@@ -39,10 +58,17 @@ int main(int argc, char **argv) {
     // CloseWindow();
 
 
-    if (argc < 2) {
-        printf("Usage : %s adrIP port\n", argv[0]);
+    if (argc < 4) {
+        printf("Usage : %s adrIP port interface\n", argv[0]);
         exit(EXIT_FAILURE);
+    } else {
+        PORT_SRV_REG = atoi(argv[2]);
+        strcpy(IP_REG, argv[1]);
+        struct sockaddr_in addr = getIPAddr(argv[3]);
+        strcpy(IP_LOC, inet_ntoa(addr.sin_addr));
+
     }
+
 
     name_t pseudo;
     printf("PSEUDO : ");
@@ -51,18 +77,26 @@ int main(int argc, char **argv) {
 
 
     pthread_t th_clt2reg;
+    pthread_t th_app_srv;
+
     requete_t req;
-    socket_t sa_reg = connecterClt2Srv(argv[1], atoi(argv[2]));
 
     pthread_create(&th_clt2reg, NULL, dialClt2Reg, (void*)&sa_reg);
     pthread_detach(th_clt2reg);
+    pthread_create(&th_app_srv, NULL, serv_applicatif, NULL);
+    pthread_detach(th_app_srv);
 
+
+    while (PORT_SRV_APP == 0) { } // attente de l'attribution du port avant la connection au serveur d'neregistrement
+    
+
+    
 
     pthread_mutex_lock(&MUT_CLT2REG);
 
         req.idReq=REG_PLAYER;
-        strcpy(req.verbReq, "TEST");
-        strcpy(req.optReq, pseudo);
+        strcpy(req.verbReq, "REG");
+        sprintf(req.optReq, "%s:%s:%hu", pseudo, IP_LOC, PORT_SRV_APP);
 
         if (req_send_clt2reg == NULL) {
             req_send_clt2reg = malloc(sizeof(requete_t));
@@ -71,8 +105,6 @@ int main(int argc, char **argv) {
 
 
     pthread_mutex_unlock(&MUT_CLT2REG);
-
-    printf("envoye !\n");
 
     while (req_send_clt2reg != NULL) {};  // attente de l'envoi confirmé
 
@@ -112,7 +144,6 @@ int main(int argc, char **argv) {
 
 
         req2str(&req, buff);
-        printf("envoye : '%s' !\n", buff);
 
         while (req_send_clt2reg != NULL) {};  // attente de l'envoi confirmé
 
@@ -131,7 +162,6 @@ int main(int argc, char **argv) {
         pthread_mutex_unlock(&MUT_CLT2REG);
 
         req2str(&req, buff);
-        printf("envoye : '%s' !\n", buff);
 
         while (req_send_clt2reg != NULL) {};  // attente de l'envoi confirmé
 
@@ -154,7 +184,6 @@ int main(int argc, char **argv) {
 
 
     req2str(&req, buff);
-    printf("envoye : '%s' !\n", buff);
     while (req_send_clt2reg != NULL) {};  // attente de l'envoi confirmé
 
     pthread_mutex_lock(&MUT_CLT2REG);
@@ -172,8 +201,29 @@ int main(int argc, char **argv) {
 
 
     req2str(&req, buff);
-    printf("envoye : '%s' !\n", buff);
     while (req_send_clt2reg != NULL) {};  // attente de l'envoi confirmé
 
     return 0;
 }
+
+
+
+
+
+void * serv_applicatif(void * arg) {
+
+    socklen_t lenMyAddr = sizeof(se.addrLoc);
+    struct hostent *host; 
+    printAppSrv("APP SERVER thread lance !\n");
+
+    se = creerSocketEcoute("0.0.0.0", 0);
+
+    CHECK(getsockname(se.fd, (struct sockaddr *)&se.addrLoc, &lenMyAddr),"--getsockname()--");    
+    PORT_SRV_APP = se.addrLoc.sin_port;
+
+
+    pthread_exit(EXIT_SUCCESS);
+}
+
+
+

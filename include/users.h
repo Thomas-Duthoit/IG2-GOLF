@@ -9,7 +9,8 @@ typedef char name_t[MAX_NAME];
 
 typedef struct {
 	name_t name;
-	socket_t *sDial;
+	char * adrIP; 
+	short port_srv_app; 
 	char etat;
 } user_t;
 
@@ -31,12 +32,11 @@ typedef enum {
 
 
 int trouverUser(char *nom);  // recherche dans la liste des joueurs enregistrés
-int creerUser(char *nom, socket_t *sDial);  // crée un user_t et l'enregistre dans les joueurs connectés
-int identifierUser(char * userName, socket_t *sDial);  // enregistre une connection de joueur (met à jour / crée le joueur)
+int creerUser(name_t nom, char * adrIP, short port) ;  // crée un user_t et l'enregistre dans les joueurs connectés
+int identifierUser(char * userName, char * adrIP, short port);  // enregistre une connection de joueur (met à jour / crée le joueur)
 void deconnecterUser(int indUser);  // déconnecte l'utilisateur et ferme la socket
 void modifierEtat(int indUser, etat_joueur_t etat);  // change l'état d'un joueur
 char * nameUser(int indUser);
-socket_t *socketUser(int indUser);  // renvoie la socket d'un joueur
 void lireUsers(void);
 void ecrireUsers(void);
 void getListPseudoByState(etat_joueur_t etat, char * listePseudo); // récupère la liste des joueurs selon leur état

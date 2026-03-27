@@ -1,9 +1,6 @@
 #ifndef REQREP_H
 #define REQREP_H
 
-#include "data.h"
-#include "session.h"
-
 #define TAILLE_VERB 20
 #define TAILLE_OPT 500
 

@@ -23,12 +23,7 @@ users_t users;
 int afficherUsers(char *cde) {
 	printf("[%s] Liste des users [%d]\n", cde, users.nbUsers);	
 	for (int i=0; i < users.nbUsers; i++)
-		if (users.tab[i].sDial != NULL)
-			printf("\tUser [%d:%s], Socket [%d], IP [%s], Etat [%c]\n",
-				i,users.tab[i].name, users.tab[i].sDial->fd,
-				inet_ntoa((users.tab[i].sDial->addrDst).sin_addr),users.tab[i].etat);
-		else
-			printf("\tUser [%d:%s], Socket [-1], IP [0.0.0.0], Etat [%c]\n",
+			printf("\tUser [%d:%s], Etat [%c]\n",
 				i,users.tab[i].name,users.tab[i].etat);
 }
 
@@ -43,7 +38,7 @@ int trouverUser(name_t nom) {
 
 
 // crée un user_t et l'enregistre dans les joueurs connectés
-int creerUser(name_t nom, socket_t *sDial) {
+int creerUser(name_t nom, char * adrIP, short port) {
 	if (users.nbUsers == MAX_USERS) 
 		return -1;
 	strncpy(users.tab[users.nbUsers].name, nom, MAX_NAME-1);
@@ -52,8 +47,13 @@ int creerUser(name_t nom, socket_t *sDial) {
 		users.tab[users.nbUsers].name[MAX_NAME-1]='\0';
 
 	
-	users.tab[users.nbUsers].sDial=sDial;
 	users.tab[users.nbUsers].etat=ETAT_ONLINE;
+
+	users.tab[users.nbUsers].adrIP = (char *)malloc(sizeof(char)*16); 
+	strcpy(users.tab[users.nbUsers].adrIP, adrIP); 
+	
+	users.tab[users.nbUsers].port_srv_app = port; 
+	
 	users.nbUsers++;
 
 	
@@ -62,20 +62,21 @@ int creerUser(name_t nom, socket_t *sDial) {
 }
 
 // enregistre une connection de joueur (met à jour / crée le joueur)
-int identifierUser(char * userName, socket_t *sDial) {
+int identifierUser(char * userName, char * adrIP, short port) {
 	requete_t req;
 	int index = -1;
 	if ((index=trouverUser(userName))==-1) {
-		index=creerUser(userName, sDial);
+		index=creerUser(userName, adrIP, port);
 	}
 	else { 
-		users.tab[index].sDial = sDial; 
 		users.tab[index].etat = ETAT_ONLINE; 
+
+		users.tab[users.nbUsers].adrIP = (char *)malloc(sizeof(char)*16); 
+		strcpy(users.tab[index].adrIP, adrIP); 
+
+		users.tab[index].port_srv_app = port; 
 	}
 
-
-	if (index==-1) 
-		CHECK(close(sDial->fd),"--close()--");
 	//
 	afficherUsers("identifier");
 	
@@ -85,16 +86,15 @@ int identifierUser(char * userName, socket_t *sDial) {
 // déconnecte l'utilisateur et ferme la socket
 void deconnecterUser(int indUser) {
 	printf(
-		"Déconnexion : User [%s], Socket [%d], IP [%s]\n",
-		users.tab[indUser].name,
-		users.tab[indUser].sDial->fd, 
-		inet_ntoa((users.tab[indUser].sDial->addrDst).sin_addr)
+		"Déconnexion : User [%s]\n",
+		users.tab[indUser].name
 	);
 
 	// CHECK(close(((socket_t *)users.tab[indUser].sDial)->fd),"--close()--");
 	
-	users.tab[indUser].sDial = NULL;
 	users.tab[indUser].etat = ETAT_OFFLINE;
+	users.tab[indUser].port_srv_app = 0; 
+	free(users.tab[indUser].adrIP); 
 
 	//
 	afficherUsers("déconnecter");
@@ -114,13 +114,6 @@ char * nameUser(int indUser) {
 		return NULL;
 	else 
 		return users.tab[indUser].name;
-}
-
-socket_t *socketUser(int indUser) {
-	if (indUser==-1) 
-		return NULL;
-	else 
-		return users.tab[indUser].sDial;
 }
 
 void lireUsers(void) {
@@ -151,7 +144,7 @@ void getListPseudoByState(etat_joueur_t etat, char * listePseudo){
 
 	for (int i=0; i < MAX_USERS; i++){
 		if (users.tab[i].etat==etat) {
-			strcpy(username, users.tab[i].name); 
+			strcpy(username, nameUser(i)); 
 			strcat(username, ":"); 
 			strcat(listePseudo, username);
 			flag = 1; 

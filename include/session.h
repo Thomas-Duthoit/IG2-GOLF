@@ -16,6 +16,8 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <ifaddrs.h>
+
 /*
 *****************************************************************************************
  *	\noop		D E F I N I T I O N   DES   M A C R O S
@@ -117,5 +119,10 @@ socket_t accepterClt (const socket_t sockEcoute);
  *	\result		socket connectée au serveur fourni en paramètre
  */
 socket_t connecterClt2Srv (char *adrIP, short port);
+
+
+
+struct sockaddr_in getIPAddr(char * name);
+
 
 #endif /* SESSION_H */

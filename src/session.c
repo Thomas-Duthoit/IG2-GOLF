@@ -136,3 +136,19 @@ socket_t connecterClt2Srv (char *adrIP, short port) {
 
     return sock;
 }
+
+struct sockaddr_in getIPAddr(char * name) {
+	struct ifaddrs *ifaddr;
+	struct sockaddr_in addr;
+	
+	CHECK (getifaddrs(&ifaddr), "__getifaddrs__");
+
+	for (struct ifaddrs *ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr == NULL) continue;
+		if( strcmp(ifa->ifa_name,name) ==0) 
+			if (ifa->ifa_addr->sa_family == AF_INET) {
+				memcpy(&addr, ifa->ifa_addr, sizeof(addr));
+				return addr;
+			}	
+	} 
+}
