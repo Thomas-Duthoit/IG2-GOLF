@@ -124,18 +124,30 @@ socket_t *socketUser(int indUser) {
 }
 
 void lireUsers(void) {
+	printf("-- LIRE USERS (debut) --\n");
 	FILE *fp;
 	CHECK_NULL(fp=fopen("users.dat", "r"), "--fopen()--");
 	CHECK(users.nbUsers=fread(users.tab, sizeof(user_t), MAX_USERS, fp),"--fread()--");
+	printf("LIRE USERS : %d lu\n", users.nbUsers);
 	CHECK(fclose(fp),"--fclose()--");
+
+	printf("-- LIRE USERS (fin) --\n");
+
 }
 
 
 void ecrireUsers(void) {
+	printf("-- ECRIRE USERS (debut) --\n");
+
 	FILE *fp;
 	CHECK_NULL(fp=fopen("users.dat", "w"), "--fopen()--");
 	CHECK(fwrite(users.tab, sizeof(user_t), users.nbUsers, fp),"--fread()--");
 	CHECK(fclose(fp),"--fclose()--");	
+
+	printf("ECRIRE USERS : %d ecrits\n", users.nbUsers);
+
+	printf("-- ECRIRE USERS (fin) --\n");
+
 }
 
 

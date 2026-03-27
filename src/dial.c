@@ -33,7 +33,7 @@ void * dialReg2Clt(void * sd_p) {
         recevoir(&sd, &req, (pFct)str2req);
 
         if (req.idReq==END_DIAL) {
-            printReg2Clt("\x1b[1;31mEND_DIAL RECU\x1b[0m");
+            printReg2Clt("\x1b[1;31mEND_DIAL RECU\x1b[0m\n");
             getchar();
             break;
         }

@@ -15,6 +15,14 @@
 #include "session.h"
 #include "dial.h"
 #include "reqRep.h"
+#include "users.h"
+
+
+
+void installSigServer(int sigNum);
+
+
+
 
 socket_t se; 
 
@@ -22,7 +30,12 @@ socket_t se;
 int main(int argc, char ** argv) {
     socket_t sd;
 
+
+    installSigServer(SIGUSR1);
+
     printf("Hello, MCS !\n");
+
+    lireUsers();
 
     if (argc < 2) {
         printf("Usage : %s adrIP port\n", argv[0]);
@@ -46,3 +59,32 @@ int main(int argc, char ** argv) {
 
     return 0;
 }
+
+
+
+
+
+void deroute (int sigNum) {
+    int status;
+    switch (sigNum) {
+        case SIGCHLD : 
+            wait(&status); 
+            break;
+        case SIGUSR1 : 
+            close(se.fd);
+            ecrireUsers();
+            printf("Fin du serveur [%d]\n", getpid());
+            _exit(1);  // _exit plutot que exit pour que ça marche dans un contexte multithread, car on ne touche pas aux buffers stdin/stderr, et qu'il ne prend pas de verrous
+            break;
+    }
+}
+
+
+void installSigServer(int sigNum) {
+    struct sigaction newAct;
+    newAct.sa_handler = deroute;
+    newAct.sa_flags = SA_RESTART;
+    sigemptyset(&newAct.sa_mask) ;
+    CHECK(sigaction(sigNum, &newAct, NULL),"--sigaction()--");
+}
+
