@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
             int mouse_y = GetMouseY();
 
             // bouton host
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 20, 20})) {
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
                 pthread_mutex_lock(&MUT_CLT2REG);
 
                 req.idReq=UPDT_CLIENT_STATE;
@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
             }
 
             // bouton online
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 20, 20})) {
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 30, 30})) {
                 pthread_mutex_lock(&MUT_CLT2REG);
 
                 req.idReq=UPDT_CLIENT_STATE;
@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
             }
 
             // bouton full
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 20, 20})) {
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 30, 30})) {
                 pthread_mutex_lock(&MUT_CLT2REG);
 
                 req.idReq=UPDT_CLIENT_STATE;
@@ -199,6 +199,31 @@ int main(int argc, char **argv) {
             // bouton full
             DrawRectangle(90, 30, 30, 30, GRAY);
             DrawText("F", 93, 33, 20, BLACK);
+
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {  // clic gauche
+
+                // récupération de la position de la souris
+                int mouse_x = GetMouseX();
+                int mouse_y = GetMouseY();
+
+                // bouton host
+                if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
+                    DrawRectangle(10, 30, 30, 30, GREEN);
+                    DrawText("H", 13, 33, 20, DARKGREEN);
+                }
+
+                // bouton online
+                if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 30, 30})) {
+                    DrawRectangle(50, 30, 30, 30, GREEN);
+                    DrawText("O", 53, 33, 20, DARKGREEN);
+                }
+
+                // bouton full
+                if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 30, 30})) {
+                    DrawRectangle(90, 30, 30, 30, GREEN);
+                    DrawText("F", 93, 33, 20, DARKGREEN);
+                }
+            }
 
             // affichage @IP + port
             DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_LOC, PORT_SRV_APP), 10, 70, 20, BLACK);
