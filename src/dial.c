@@ -14,6 +14,7 @@
     extern requete_t *req_send_clt2reg;
     extern short PORT_SRV_REG;
     extern char IP_REG[100];
+    extern char buff_pseudos_hotes[TAILLE_OPT];
 #endif
 
 #ifdef SERVER
@@ -165,12 +166,9 @@ void * dialClt2Reg(void * sa_p) {
                 case HOST_LIST:
                     printClt2Reg("Rep : HOST_LIST [%hu]\n", HOST_LIST);
                     printClt2Reg("Options : %s\n", rep.optRep);
-                    printf("Liste des hotes :\n");
-                    char * strToken = strtok ( rep.optRep, ":" );
-                    while ( strToken != NULL ) {
-                        printf ("\t> %s\n", strToken);
-                        strToken = strtok ( NULL, ":" );
-                    }
+                    #ifdef CLIENT
+                    strcpy(buff_pseudos_hotes, rep.optRep);
+                    #endif
                     break;
                 case PLAYER_DETAILS:
                     printClt2Reg("Rep : PLAYER_DETAILS [%hu]\n", PLAYER_DETAILS);
