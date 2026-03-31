@@ -17,14 +17,17 @@ raylib:
 
 session.o: src/session.c include/session.h
 	@echo "Compilation de session.o"
+	mkdir -p build
 	gcc -c $(CCFLAGS) src/session.c -o build/session.o
 
 data.o: src/data.c include/data.h
 	@echo "Compilation de data.o"
+	mkdir -p build
 	gcc -c $(CCFLAGS) src/data.c -o build/data.o
 
 libINET.a: session.o data.o
 	@echo "Compilation de libINET.a"
+	mkdir -p lib/libINET
 	ar rcs lib/libINET/libINET.a build/session.o build/data.o
 
 
