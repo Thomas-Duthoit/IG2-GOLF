@@ -38,7 +38,7 @@ typedef enum {
 
     // Requêtes Clients -> Serveur applicatif
     JOIN_GAME = 101,
-    GET_PLAYERS_GAME,
+    GET_PLAYERS_LIST,
     LEAVE_GAME,
     SHOOT,
 

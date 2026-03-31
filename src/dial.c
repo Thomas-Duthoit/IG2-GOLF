@@ -7,6 +7,8 @@
 
 #define printClt2Reg(fmt, ...) printf("\x1b[1;32mTHREAD DIAL\x1b[0m] " fmt, ##__VA_ARGS__)
 #define printReg2Clt(fmt, ...) printf("\x1b[1;35mREGISTER SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
+#define printApp2Clt(fmt, ...) printf("\x1b[1;95mAPPLICATIVE SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
+#define printClt2App(fmt, ...) printf("\x1b[1;96mAPPLICATIVE SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
 
 
 #ifdef CLIENT
@@ -15,6 +17,8 @@
     extern short PORT_SRV_REG;
     extern char IP_REG[100];
     extern char buff_pseudos_hotes[TAILLE_OPT];
+    extern pthread_cond_t end_reqrep_clt2reg;
+    extern char buff_info_joueur[TAILLE_OPT];
 #endif
 
 #ifdef SERVER
@@ -26,7 +30,9 @@ void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd);
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep); 
 void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep); 
 void traiterDIS_PLAYER(requete_t * req, reponse_t * rep);
+void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep);
 
+//  --------------------------------------- SERVEUR D'ENREGISTREMENT | CLIENT -----------------------------
 
 void * dialReg2Clt(void * sd_p) {
 
@@ -45,12 +51,13 @@ void * dialReg2Clt(void * sd_p) {
             break;
         }
 
+        printReg2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
+
         switch(req.idReq) {
 
             case REG_PLAYER : 
                 
                 // Demande d'enregistrement du joueur
-                printReg2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
                 printReg2Clt("Options : %s\n", req.optReq);
                 traiterREG_PLAYER(&req, &rep, &sd); 
 
@@ -59,7 +66,6 @@ void * dialReg2Clt(void * sd_p) {
             case DIS_PLAYER : 
 
                 // Déconnexion d'un joueur
-                printReg2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
                 printReg2Clt("Options : %s\n", req.optReq);
                 traiterDIS_PLAYER(&req, &rep); 
 
@@ -69,22 +75,27 @@ void * dialReg2Clt(void * sd_p) {
             case GET_HOSTS_LIST : 
 
                 // Envoi de la liste des hôtes
-                printReg2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
                 traiterGET_HOSTS_LIST(&req, &rep); 
 
                 break;
             case UPDT_CLIENT_STATE : 
                 
                 // Changement de l'état du client 
-                printReg2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
                 printReg2Clt("Options : %s\n", req.optReq);
                 traiterUPDT_CLIENT_STATE(&req, &rep); 
 
                 break;
             case GET_PLAYER_FROM_ID : 
+            
+                // Changement de l'état du client 
+                printReg2Clt("Options : %s\n", req.optReq);
+                traiterGET_PLAYER_FROM_ID(&req, &rep); 
+            
                 break;
 
             default : 
+
+                printReg2Clt("Options inconnues\n"); 
                 break; 
         }
 
@@ -166,9 +177,14 @@ void * dialClt2Reg(void * sa_p) {
                     break;
                 case PLAYER_DETAILS:
                     printClt2Reg("Rep : PLAYER_DETAILS [%hu]\n", PLAYER_DETAILS);
+                    printClt2Reg("      Options : %s\n", rep.optRep);
+                    #ifdef CLIENT
+                    strcpy(buff_info_joueur, rep.optRep);
+                    #endif
                     break;
                 case ERR_REG_SERV:
                     printClt2Reg("Rep : ERR_REG_SERV [%hu]\n", ERR_REG_SERV);
+                    // TODO: faire la gestion d'erreur
                     break;
                     
                 default:
@@ -178,7 +194,11 @@ void * dialClt2Reg(void * sa_p) {
             strcpy(rep.optRep, "");
             strcpy(rep.verbRep, "");
         }
+
         
+        #ifdef CLIENT
+        pthread_cond_signal(&end_reqrep_clt2reg);
+        #endif
 
     }
     CHECK(close(sa.fd), "--close-");
@@ -188,7 +208,8 @@ void * dialClt2Reg(void * sa_p) {
 
 
 
-// TRAITEMENT SERVEUR ENREGISTREMENT
+// ------------------------------ TRAITEMENT SERVEUR ENREGISTREMENT -----------------------------------------
+
 
 void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd) {
     name_t username; 
@@ -212,6 +233,7 @@ void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd) {
         pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
     #endif 
 
+    // Envoi de la réponse
     if  (returnValue != -1){
         rep->idRep = OK_REG_SERV; 
         strcpy(rep->optRep, ""); 
@@ -223,6 +245,8 @@ void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd) {
         strcpy(rep->verbRep, "ERR_REG_SERV"); 
     }
 }
+
+
 
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
     name_t username; 
@@ -239,7 +263,7 @@ void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
     pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
     #endif
 
-    
+    // Envoi de la réponse
     if(index != -1)
     {
         #ifdef SERVER
@@ -264,6 +288,9 @@ void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
 
 } 
 
+
+
+
 void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep){
     char * listPseudo = (char *)malloc(sizeof(char)*(MAX_NAME+1)*MAX_USERS); 
     strcpy(listPseudo, "");
@@ -273,12 +300,16 @@ void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep){
     pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
     #endif
     
+    // Envoi de la réponse
     rep->idRep = HOST_LIST; 
     strcpy(rep->optRep, listPseudo); 
     strcpy(rep->verbRep, "HOST_LIST"); 
 
     free(listPseudo); 
 }
+
+
+
 
 void traiterDIS_PLAYER(requete_t * req, reponse_t * rep){
     int index = -1;  
@@ -287,16 +318,17 @@ void traiterDIS_PLAYER(requete_t * req, reponse_t * rep){
     sscanf(req->optReq, "%s", username);  
 
     #ifdef SERVER
-    pthread_mutex_lock(&MUT_USER_MANAGEMENT);
-        index = trouverUser(username); 
-    pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+        pthread_mutex_lock(&MUT_USER_MANAGEMENT);
+            index = trouverUser(username); 
+        pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
     #endif
 
+    // Envoi de la réponse
     if (index != -1){
         #ifdef SERVER
-        pthread_mutex_lock(&MUT_USER_MANAGEMENT); 
-            deconnecterUser(index);
-        pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+            pthread_mutex_lock(&MUT_USER_MANAGEMENT); 
+                deconnecterUser(index);
+            pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
         #endif
         rep->idRep = OK_REG_SERV; 
         strcpy(rep->optRep, ""); 
@@ -310,6 +342,115 @@ void traiterDIS_PLAYER(requete_t * req, reponse_t * rep){
 }
 
 
+void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep){
+    name_t pseudo; 
+    int index; 
+
+    char * detailsUser = (char *)malloc(sizeof(char)*TAILLE_OPT); 
+    strcpy(detailsUser, "");
+
+    sscanf(req->optReq, "%s", pseudo); 
+
+    #ifdef SERVER 
+        pthread_mutex_lock(&MUT_USER_MANAGEMENT);
+            index = trouverUser(pseudo); 
+        pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+    #endif
+    
+    // Envoi de la réponse
+    if (index != -1){
+        #ifdef SERVER
+            pthread_mutex_lock(&MUT_USER_MANAGEMENT); 
+                getDetailsUser(index, detailsUser); 
+            pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
+        #endif
+
+        rep->idRep = PLAYER_DETAILS; 
+        strcpy(rep->optRep, detailsUser); 
+        strcpy(rep->verbRep, "PLAYER_DETAILS");
+    }
+    else{
+        rep->idRep = ERR_REG_SERV; 
+        strcpy(rep->optRep, ""); 
+        strcpy(rep->verbRep, "ERR_REG_SERV");
+    }
+
+}
+
+
+// -------------------------------------------------------------------------------------------------------
+
+//  ------------------------------------------------------------------------------------------------------
+
+
+
+//  --------------------------------------- SERVEUR D'APPLICATION | CLIENT -----------------------------
+
+
+void * dialApp2Clt(void * sd_p) {
+    
+    socket_t sd = *((socket_t*)sd_p);
+
+    requete_t req;  
+    reponse_t rep; 
+
+    while (1) {
+        
+        recevoir(&sd, &req, (pFct)str2req);
+
+        if (req.idReq==END_DIAL) {
+            printApp2Clt("\x1b[1;31mEND_DIAL RECU\x1b[0m\n");
+            getchar();
+            break;
+        }
+
+        printApp2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
+
+        switch(req.idReq) {
+
+            case JOIN_GAME : 
+                printApp2Clt("      Options : %s\n", rep.optRep);
+                break; 
+
+            case GET_PLAYERS_LIST : 
+                printApp2Clt("      Options : %s\n", rep.optRep);
+                break; 
+
+            case LEAVE_GAME : 
+                printApp2Clt("      Options : %s\n", rep.optRep);
+                break; 
+
+
+            case SHOOT : 
+                printApp2Clt("      Options : %s\n", rep.optRep);
+                break; 
+
+
+            default : 
+
+                printApp2Clt("Options inconnues\n"); 
+                break; 
+        }
+
+        envoyer(&sd, &rep, (pFct)rep2str);
+
+        strcpy(rep.optRep, ""); 
+    } 
+    
+    CHECK(close(sd.fd), "--close()--");
+
+    pthread_exit(EXIT_SUCCESS);
+
+
+}
+
+
+
+void * dialClt2App(void * sa_p) {
+    
+
+
+}
 
 
 
@@ -317,9 +458,7 @@ void traiterDIS_PLAYER(requete_t * req, reponse_t * rep){
 
 
 
-
-
-
+//  ------------------------------------------------------------------------------------------------------
 
 
 

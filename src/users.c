@@ -85,10 +85,10 @@ int identifierUser(char * userName, char * adrIP, short port) {
 
 // déconnecte l'utilisateur et ferme la socket
 void deconnecterUser(int indUser) {
-	printf(
-		"Déconnexion : User [%s]\n",
-		users.tab[indUser].name
-	);
+	//printf(
+	//	"Déconnexion : User [%s]\n",
+	//	users.tab[indUser].name
+	//);
 
 	// CHECK(close(((socket_t *)users.tab[indUser].sDial)->fd),"--close()--");
 	
@@ -156,4 +156,8 @@ void getListPseudoByState(etat_joueur_t etat, char * listePseudo){
 	}
 
 	free(username); 
+}
+
+void getDetailsUser(int indUser, char * detailsUser){
+	snprintf(detailsUser, TAILLE_OPT, "%c:%s:%hu", users.tab[indUser].etat, users.tab[indUser].adrIP, users.tab[indUser].port_srv_app); 
 }

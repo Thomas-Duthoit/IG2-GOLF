@@ -17,16 +17,22 @@
 
 
 #define printAppSrv(fmt, ...) printf("\x1b[1;36mAPP SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
+#define printIHM(fmt, ...) printf("\x1b[1;31mIHM (MAIN)\x1b[0m] " fmt, ##__VA_ARGS__)
 
 
 
 void * serv_applicatif(void * arg);
+void * requetes_recurrentes_reg_1s(void * arg);
 int get_local_ip(char *buffer);
 
 
 
 requete_t *req_send_clt2reg = NULL;
 pthread_mutex_t MUT_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t end_reqrep_clt2reg = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t MUT_END_REQREP_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
+
+
 
 short PORT_SRV_REG;
 short PORT_SRV_APP = 0;
@@ -35,7 +41,8 @@ char IP_REG[100];
 char IP_LOC[100];
 
 char buff_pseudos_hotes[TAILLE_OPT];
-
+char buff_info_joueur[TAILLE_OPT];
+users_t hotes;
 
 socket_t sa_reg;
 socket_t se;
@@ -55,6 +62,10 @@ int main(int argc, char **argv) {
 
     }
 
+    for (int i=0; i<MAX_USERS; i++) {
+        hotes.tab[i].adrIP = (char *)malloc(sizeof(char)*16); 
+    }
+
 
     name_t pseudo;
     printf("PSEUDO : ");
@@ -64,6 +75,7 @@ int main(int argc, char **argv) {
 
     pthread_t th_clt2reg;
     pthread_t th_app_srv;
+    pthread_t th_req_rec;
 
     requete_t req;
 
@@ -78,7 +90,7 @@ int main(int argc, char **argv) {
     pthread_mutex_lock(&MUT_CLT2REG);
 
         req.idReq=REG_PLAYER;
-        strcpy(req.verbReq, "REG");
+        strcpy(req.verbReq, "REG_PLAYER");
         sprintf(req.optReq, "%s:%s:%hu", pseudo, IP_LOC, PORT_SRV_APP);
 
         if (req_send_clt2reg == NULL) {
@@ -93,10 +105,11 @@ int main(int argc, char **argv) {
     
 
     // création de l'IHM avec raylib
-    InitWindow(800, 450, "IG2-GOLF");  // fenêtre 800 x 450 px
+    SetTraceLogLevel(LOG_WARNING);  // on ne veut pas les messages d'info
+    InitWindow(800, 450, TextFormat("IG2-GOLF - %s", pseudo));  // fenêtre 800 x 450 px
 
-    float delai_refresh_hosts=1.0;  // 1 s
-    float tempo_refresh_hosts=0.0;
+    pthread_create(&th_req_rec, NULL, requetes_recurrentes_reg_1s, NULL);
+    pthread_detach(th_req_rec);
 
     while (!WindowShouldClose()) {  // tant que la fenêtre ne doit pas se fermer
 
@@ -113,7 +126,7 @@ int main(int argc, char **argv) {
                 pthread_mutex_lock(&MUT_CLT2REG);
 
                 req.idReq=UPDT_CLIENT_STATE;
-                strcpy(req.verbReq, "UPDT");
+                strcpy(req.verbReq, "UPDT_CLIENT_STATE");
                 
                 snprintf(req.optReq, TAILLE_OPT, "%s:H", pseudo);
                             
@@ -130,7 +143,7 @@ int main(int argc, char **argv) {
                 pthread_mutex_lock(&MUT_CLT2REG);
 
                 req.idReq=UPDT_CLIENT_STATE;
-                strcpy(req.verbReq, "UPDT");
+                strcpy(req.verbReq, "UPDT_CLIENT_STATE");
                 
                 snprintf(req.optReq, TAILLE_OPT, "%s:O", pseudo);
                             
@@ -148,7 +161,7 @@ int main(int argc, char **argv) {
                 pthread_mutex_lock(&MUT_CLT2REG);
 
                 req.idReq=UPDT_CLIENT_STATE;
-                strcpy(req.verbReq, "UPDT");
+                strcpy(req.verbReq, "UPDT_CLIENT_STATE");
                 
                 snprintf(req.optReq, TAILLE_OPT, "%s:F", pseudo);
                             
@@ -159,26 +172,6 @@ int main(int argc, char **argv) {
 
                 pthread_mutex_unlock(&MUT_CLT2REG);
             }
-        }
-
-        // partie envoie récurrents
-        tempo_refresh_hosts += GetFrameTime();
-        if (tempo_refresh_hosts >= delai_refresh_hosts) {
-            
-            tempo_refresh_hosts -= delai_refresh_hosts;
-
-            pthread_mutex_lock(&MUT_CLT2REG);
-
-            req.idReq=GET_HOSTS_LIST;
-            strcpy(req.verbReq, "HOSTS");
-            strcpy(req.optReq, "");
-                        
-            if (req_send_clt2reg == NULL) {
-                req_send_clt2reg = malloc(sizeof(requete_t));
-                *req_send_clt2reg = req;
-            }
-
-            pthread_mutex_unlock(&MUT_CLT2REG);
         }
 
 
@@ -229,22 +222,10 @@ int main(int argc, char **argv) {
             DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_LOC, PORT_SRV_APP), 10, 70, 20, BLACK);
             DrawText("Liste des hotes : ", 10, 90, 20, BLACK);
 
-            
-            pthread_mutex_lock(&MUT_CLT2REG);
-
-            //printf("%s\n", buff_pseudos_hotes);
-            char copie_buff_pseudo_hotes[TAILLE_OPT];
-            strcpy(copie_buff_pseudo_hotes, buff_pseudos_hotes);
-            char * tok = strtok(copie_buff_pseudo_hotes, ":" );
-            int i=0;
-            while ( tok != NULL ) {
-                DrawText(TextFormat("> %s", tok), 10, 110+(20*i), 20, BLACK);
-                i++;
-                tok = strtok(NULL, ":" );
-
+            for (int i=0; i<hotes.nbUsers; i++) {
+                DrawText(TextFormat("> %s  - %s : %hu", hotes.tab[i].name, hotes.tab[i].adrIP, hotes.tab[i].port_srv_app), 10, 110+(20*i), 20, BLACK);
             }
 
-            pthread_mutex_unlock(&MUT_CLT2REG);
 
 
             DrawFPS(10, 450-20);
@@ -273,7 +254,7 @@ int main(int argc, char **argv) {
     pthread_mutex_lock(&MUT_CLT2REG);
 
         req.idReq=END_DIAL;
-        strcpy(req.verbReq, "END");
+        strcpy(req.verbReq, "END_DIAL");
         strcpy(req.optReq, "");
                  
         if (req_send_clt2reg == NULL) {
@@ -308,4 +289,72 @@ void * serv_applicatif(void * arg) {
 }
 
 
+
+
+
+void * requetes_recurrentes_reg_1s(void * arg) {
+
+    
+    // partie envoie récurrents
+    // contenu de la boucle exécuté une fois par seconde
+
+    requete_t req;
+
+    while (1) {
+        sleep(1);        
+
+        pthread_mutex_lock(&MUT_CLT2REG);
+
+        req.idReq=GET_HOSTS_LIST;
+        strcpy(req.verbReq, "GET_HOSTS_LIST");
+        strcpy(req.optReq, "");
+                    
+        if (req_send_clt2reg == NULL) {
+            req_send_clt2reg = malloc(sizeof(requete_t));
+            *req_send_clt2reg = req;
+        }
+
+        pthread_mutex_unlock(&MUT_CLT2REG);
+
+        pthread_cond_wait(&end_reqrep_clt2reg, &MUT_END_REQREP_CLT2REG);  // attente fin de comm
+
+
+        pthread_mutex_lock(&MUT_CLT2REG);
+
+        char copie_buff_pseudo_hotes[TAILLE_OPT];
+        strcpy(copie_buff_pseudo_hotes, buff_pseudos_hotes);
+        char * tok = strtok(copie_buff_pseudo_hotes, ":" );
+        int i=0;
+        while ( tok != NULL ) {
+            strcpy(hotes.tab[i].name, tok);
+            i++;
+            tok = strtok(NULL, ":" );
+        }
+        hotes.nbUsers = i;
+        pthread_mutex_unlock(&MUT_CLT2REG);
+
+        for (int j=0; j<hotes.nbUsers; j++) {
+            pthread_mutex_lock(&MUT_CLT2REG);
+
+            req.idReq=GET_PLAYER_FROM_ID;
+            strcpy(req.verbReq, "GET_PLAYER_FROM_ID");
+            strcpy(req.optReq, hotes.tab[j].name);
+                        
+            if (req_send_clt2reg == NULL) {
+                req_send_clt2reg = malloc(sizeof(requete_t));
+                *req_send_clt2reg = req;
+            }
+
+            pthread_mutex_unlock(&MUT_CLT2REG);
+
+            pthread_cond_wait(&end_reqrep_clt2reg, &MUT_END_REQREP_CLT2REG);  // attente fin de comm
+
+
+            sscanf(buff_info_joueur, "%c:%[^:]:%hu\n", &hotes.tab[j].etat, hotes.tab[j].adrIP, &hotes.tab[j].port_srv_app);
+
+        }
+
+    }
+
+}
 

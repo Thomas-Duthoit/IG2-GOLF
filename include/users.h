@@ -40,4 +40,5 @@ char * nameUser(int indUser);
 void lireUsers(void);
 void ecrireUsers(void);
 void getListPseudoByState(etat_joueur_t etat, char * listePseudo); // récupère la liste des joueurs selon leur état
+void getDetailsUser(int indUser, char * detailsUser); // Récupère les détails d'un joueur
 #endif /* USERS_H */ 
