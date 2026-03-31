@@ -133,11 +133,9 @@ void * dialClt2Reg(void * sa_p) {
 
         #endif
 
-        printClt2Reg("%s [%hu]\n", req.verbReq, req.idReq);
+        printClt2Reg("Req : %s [%hu]\n", req.verbReq, req.idReq);
         
         envoyer(&sa, &req, (pFct)req2str);
-
-        printClt2Reg("Envoi fait\n");
 
 
 
@@ -151,11 +149,7 @@ void * dialClt2Reg(void * sa_p) {
         ) {
 
 
-            printClt2Reg("Attente reception\n");
-
             recevoir(&sa, &rep, (pFct)str2rep);
-
-            printClt2Reg("Reception OK\n");
 
 
             switch (rep.idRep)
@@ -165,7 +159,7 @@ void * dialClt2Reg(void * sa_p) {
                     break;
                 case HOST_LIST:
                     printClt2Reg("Rep : HOST_LIST [%hu]\n", HOST_LIST);
-                    printClt2Reg("Options : %s\n", rep.optRep);
+                    printClt2Reg("      Options : %s\n", rep.optRep);
                     #ifdef CLIENT
                     strcpy(buff_pseudos_hotes, rep.optRep);
                     #endif
@@ -231,14 +225,12 @@ void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd) {
 }
 
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
-    printf("Modification état du joueurs\n"); 
     name_t username; 
     etat_joueur_t etat;
     int index = -1;  
 
     sscanf(req->optReq, "%[^:]:%c", username, (char*)&etat); 
-
-    printf("%s => %c\n", username, etat); 
+ 
     #ifdef SERVER
     pthread_mutex_lock(&MUT_USER_MANAGEMENT);
     
@@ -273,7 +265,6 @@ void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
 } 
 
 void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep){
-    printf("Envoi de la liste des clients en état hôtes");
     char * listPseudo = (char *)malloc(sizeof(char)*(MAX_NAME+1)*MAX_USERS); 
     strcpy(listPseudo, "");
     #ifdef SERVER
@@ -281,8 +272,6 @@ void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep){
         getListPseudoByState(ETAT_HOST, listPseudo); 
     pthread_mutex_unlock(&MUT_USER_MANAGEMENT);
     #endif
-
-    printf("Liste des hôtes : %s\n", listPseudo); 
     
     rep->idRep = HOST_LIST; 
     strcpy(rep->optRep, listPseudo); 
@@ -292,13 +281,10 @@ void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep){
 }
 
 void traiterDIS_PLAYER(requete_t * req, reponse_t * rep){
-    printf("Déconnexion du joueur\n"); 
     int index = -1;  
 
     name_t username; 
-    sscanf(req->optReq, "%s", username); 
-
-    printf("username : %s\n", username); 
+    sscanf(req->optReq, "%s", username);  
 
     #ifdef SERVER
     pthread_mutex_lock(&MUT_USER_MANAGEMENT);
