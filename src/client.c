@@ -186,7 +186,6 @@ int main(int argc, char **argv) {
 void * serv_applicatif(void * arg) {
 
     socklen_t lenMyAddr = sizeof(se.addrLoc);
-    struct hostent *host; 
     printAppSrv("APP SERVER thread lance !\n");
 
     se = creerSocketEcoute("0.0.0.0", 0);
