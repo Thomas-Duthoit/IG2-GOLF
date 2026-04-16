@@ -50,7 +50,7 @@ short PORT_SRV_REG;
 short PORT_SRV_APP = 0;
 char INTERFACE[50]; 
 char IP_REG[100];
-char IP_LOC[100];
+char IP_SERVICE[100];
 
 char buff_pseudos_hotes[TAILLE_OPT];
 char buff_info_joueur[TAILLE_OPT];
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
         PORT_SRV_REG = atoi(argv[2]);
         strcpy(IP_REG, argv[1]);
         struct sockaddr_in addr = getIPAddr(argv[3]);
-        strcpy(IP_LOC, inet_ntoa(addr.sin_addr));
+        strcpy(IP_SERVICE, inet_ntoa(addr.sin_addr));
 
     }
 
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
         req.idReq=REG_PLAYER;
         strcpy(req.verbReq, "REG_PLAYER");
-        sprintf(req.optReq, "%s:%s:%hu", pseudo, IP_LOC, PORT_SRV_APP);
+        sprintf(req.optReq, "%s:%s:%hu", pseudo, IP_SERVICE, PORT_SRV_APP);
 
         if (req_send_clt2reg == NULL) {
             req_send_clt2reg = malloc(sizeof(requete_t));
@@ -433,7 +433,7 @@ void renderLIST(){
         }
 
         // affichage @IP + port
-        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_LOC, PORT_SRV_APP), 10, 70, 20, BLACK);
+        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_SERVICE, PORT_SRV_APP), 10, 70, 20, BLACK);
         DrawText("Liste des hotes : ", 10, 90, 20, BLACK);
 
         for (int i=0; i<hotes.nbUsers; i++) {
@@ -514,7 +514,7 @@ void renderLOBBY(){
 
 
         // affichage @IP + port
-        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_LOC, PORT_SRV_APP), 10, 10, 20, BLACK);
+        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_SERVICE, PORT_SRV_APP), 10, 10, 20, BLACK);
         
         
         //for (int i=0; i<hotes.nbUsers; i++) {
