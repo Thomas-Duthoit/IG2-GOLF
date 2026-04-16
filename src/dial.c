@@ -27,26 +27,25 @@
 #endif
 
 
-void traMettre des switchs dans les fonctions
-//TODO : Changer le prototype des fonct reponse_t * rep, socket_t * sd);
+
+//TODO: Changer le prototype des fonct reponse_t * rep, socket_t * sd);
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep); 
 void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep); 
 void traiterDIS_PLAYER(requete_t * req, reponse_t * rep);
 void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep);
 void traiterJOIN_GAME(requete_t * req, reponse_t * rep); 
+void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd);
 
 //  --------------------------------------- SERVEUR D'ENREGISTREMENT | CLIENT -----------------------------
 
-void * dialReg2Clt(void * sd_p) {
-
-    socket_t sd = *((socket_t*)sd_p);
+void * dialReg2Clt(socket_t * sd) {
 
     requete_t req;  
     reponse_t rep; 
 
     while (1) {
         
-        recevoir(&sd, &req, (pFct)str2req);
+        recevoir(sd, &req, (pFct)str2req);
 
         if (req.idReq==END_DIAL) {
             printReg2Clt("\x1b[1;31mEND_DIAL RECU\x1b[0m\n");
@@ -61,7 +60,7 @@ void * dialReg2Clt(void * sd_p) {
                 
                 // Demande d'enregistrement du joueur
                 printReg2Clt("Options : %s\n", req.optReq);
-                traiterREG_PLAYER(&req, &rep, &sd); 
+                traiterREG_PLAYER(&req, &rep, sd); 
 
                 break;
                 
@@ -101,26 +100,18 @@ void * dialReg2Clt(void * sd_p) {
                 break; 
         }
 
-        envoyer(&sd, &rep, (pFct)rep2str);
+        envoyer(sd, &rep, (pFct)rep2str);
 
         strcpy(rep.optRep, ""); 
     } 
     
-    CHECK(close(sd.fd), "--close()--");
+    CHECK(close(sd->fd), "--close()--");
 
     pthread_exit(EXIT_SUCCESS);
 }
 
 
-void * dialClt2Reg(void * sa_p) {
-
-    // socket_t sa = *((socket_t*)sa_p);
-
-    socket_t sa;
-    
-    #ifdef CLIENT
-    sa = connecterClt2Srv(IP_REG, PORT_SRV_REG);
-    #endif
+void * dialClt2Reg(socket_t * sa) {
 
     requete_t req;
     reponse_t rep;
@@ -148,14 +139,14 @@ void * dialClt2Reg(void * sa_p) {
 
         printClt2Reg("Req : %s [%hu]\n", req.verbReq, req.idReq);
         
-        envoyer(&sa, &req, (pFct)req2str);
+        envoyer(sa, &req, (pFct)req2str);
 
 
 
         if(req.idReq == END_DIAL) {
             break;
         }
-        recevoir(&sa, &rep, (pFct)str2rep);
+        recevoir(sa, &rep, (pFct)str2rep);
 
 
         switch (rep.idRep)
@@ -194,7 +185,7 @@ void * dialClt2Reg(void * sa_p) {
         #endif
 
     }
-    CHECK(close(sa.fd), "--close-");
+    CHECK(close(sa->fd), "--close-");
 
     pthread_exit(EXIT_SUCCESS);
 }
@@ -382,16 +373,14 @@ void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep){
 //  --------------------------------------- SERVEUR D'APPLICATION | CLIENT -----------------------------
 
 
-void * dialApp2Clt(void * sd_p) {
+void * dialApp2Clt(socket_t * sd) {
     
-    socket_t sd = *((socket_t*)sd_p);
-
     requete_t req;  
     reponse_t rep; 
 
     while (1) {
         
-        recevoir(&sd, &req, (pFct)str2req);
+        recevoir(sd, &req, (pFct)str2req);
 
         if (req.idReq==END_DIAL) {
             printApp2Clt("\x1b[1;31mEND_DIAL RECU\x1b[0m\n");
@@ -427,12 +416,12 @@ void * dialApp2Clt(void * sd_p) {
                 break; 
         }
 
-        envoyer(&sd, &rep, (pFct)rep2str);
+        envoyer(sd, &rep, (pFct)rep2str);
 
         strcpy(rep.optRep, ""); 
     } 
     
-    CHECK(close(sd.fd), "--close()--");
+    CHECK(close(sd->fd), "--close()--");
 
     pthread_exit(EXIT_SUCCESS);
 
@@ -441,19 +430,7 @@ void * dialApp2Clt(void * sd_p) {
 
 
 
-void * dialClt2App(void * adrSrvApp) {  // adrSrvApp = "port:IP"
-    
-    socket_t sa;
-    
-    #ifdef CLIENT
-    char ip_app[50];
-    short port_app;
-
-    sscanf(adrSrvApp, "%hu:%[^\n]", &port_app, ip_app);
-    printClt2App("Connexion à %s:%hu\n", ip_app, port_app);
-    sa = connecterClt2Srv(ip_app, port_app);
-    free(adrSrvApp);
-    #endif
+void * dialClt2App(socket_t * sa) {  // adrSrvApp = "port:IP"
 
     requete_t req;
     reponse_t rep;
@@ -481,7 +458,7 @@ void * dialClt2App(void * adrSrvApp) {  // adrSrvApp = "port:IP"
 
         printClt2Reg("Req : %s [%hu]\n", req.verbReq, req.idReq);
         
-        envoyer(&sa, &req, (pFct)req2str);
+        envoyer(sa, &req, (pFct)req2str);
 
 
 
@@ -489,7 +466,7 @@ void * dialClt2App(void * adrSrvApp) {  // adrSrvApp = "port:IP"
             break;
         }
         
-        recevoir(&sa, &rep, (pFct)str2rep);
+        recevoir(sa, &rep, (pFct)str2rep);
 
 
         switch (rep.idRep)
@@ -516,7 +493,7 @@ void * dialClt2App(void * adrSrvApp) {  // adrSrvApp = "port:IP"
         #endif
 
     }
-    CHECK(close(sa.fd), "--close-");
+    CHECK(close(sa->fd), "--close-");
 
     pthread_exit(EXIT_SUCCESS);
 

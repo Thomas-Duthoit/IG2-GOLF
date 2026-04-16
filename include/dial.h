@@ -12,13 +12,18 @@
 #define printClt2App(fmt, ...) printf("\x1b[1;36mAPP SERVER (clt2app)\x1b[0m] " fmt, ##__VA_ARGS__)
 
 
+
+// prototype fonction utilisées pour les threads
+typedef void * (*pFctThread)(void *);
+
+
 // ---- SERVEUR D'ENREGISTREMENT | CLIENT -----------
-void * dialReg2Clt(void * sd_p);
-void * dialClt2Reg(void * sa_p);
+void * dialReg2Clt(socket_t * sd_p);
+void * dialClt2Reg(socket_t * sa_p);
 
 // ---- SERVEUR D'APPLICATION | CLIENT -----------
-void * dialApp2Clt(void * sd_p); 
-void * dialClt2App(void * sa_p); 
+void * dialApp2Clt(socket_t * sd_p); 
+void * dialClt2App(socket_t * sa_p); 
 
 
 

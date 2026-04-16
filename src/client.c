@@ -59,6 +59,7 @@ users_t clients_app;
 
 socket_t sa_reg;
 socket_t se;
+socket_t sa;
 
 game_state_t game_state; 
 name_t pseudo;
@@ -95,7 +96,9 @@ int main(int argc, char **argv) {
 
     requete_t req;
 
-    pthread_create(&th_clt2reg, NULL, dialClt2Reg, (void*)&sa_reg);
+    sa_reg = connecterClt2Srv(IP_REG, PORT_SRV_REG);
+
+    pthread_create(&th_clt2reg, NULL, (pFctThread)dialClt2Reg, (void*)&sa_reg);
     pthread_detach(th_clt2reg);
     pthread_create(&th_app_srv, NULL, serv_applicatif, NULL);
     pthread_detach(th_app_srv);
@@ -201,7 +204,7 @@ void * serv_applicatif(void * arg) {
         pthread_t th;
         socket_t *sd_p = (socket_t*)malloc(sizeof(socket_t));
         *sd_p = sd;
-        pthread_create(&th, NULL, dialApp2Clt, (void*)sd_p);
+        pthread_create(&th, NULL, (pFctThread)dialApp2Clt, (void*)sd_p);
         pthread_detach(th);        
     }
 
@@ -354,9 +357,10 @@ void updateLIST(){
                 printIHM("Creation du thread de comm \"dialClt2App\" ...\n");
 
                 pthread_t th_dialClt2App;
-                char* adrSrvApp = (char*) malloc(100 * sizeof(char));
-                snprintf(adrSrvApp, 100, "%hu:%s", hotes.tab[i].port_srv_app, hotes.tab[i].adrIP);
-                pthread_create(&th_dialClt2App, NULL, dialClt2App, adrSrvApp);
+
+                sa = connecterClt2Srv(hotes.tab[i].adrIP, hotes.tab[i].port_srv_app);
+
+                pthread_create(&th_dialClt2App, NULL, (pFctThread)dialClt2App, (void*)&sa);
                 pthread_detach(th_dialClt2App);
 
 

@@ -64,7 +64,7 @@ int main(int argc, char ** argv) {
         pthread_t th;
         socket_t *sd_p = (socket_t*)malloc(sizeof(socket_t));
         *sd_p = sd;
-        pthread_create(&th, NULL, dialReg2Clt, (void*)sd_p);
+        pthread_create(&th, NULL, (pFctThread)dialReg2Clt, (void*)sd_p);
         pthread_detach(th);        
     }
     close(se.fd); // la socket d'écoute n'est jamais fermée
