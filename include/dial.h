@@ -1,7 +1,15 @@
 #ifndef DIAL_H
 #define DIAL_H
 
+#define NB_JOUEURS_MAX 4
 
+
+
+#define printClt2Reg(fmt, ...) printf("\x1b[1;32mDIAL REG\x1b[0m] " fmt, ##__VA_ARGS__)
+#define printReg2Clt(fmt, ...) printf("\x1b[1;35mREGISTER SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
+#define printApp2Clt(fmt, ...) printf("\x1b[1;36mAPP SERVER (app2clt)\x1b[0m] " fmt, ##__VA_ARGS__)
+#define printAppSrv(fmt, ...) printf("\x1b[1;36mAPP SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
+#define printClt2App(fmt, ...) printf("\x1b[1;36mAPP SERVER (clt2app)\x1b[0m] " fmt, ##__VA_ARGS__)
 
 
 // ---- SERVEUR D'ENREGISTREMENT | CLIENT -----------

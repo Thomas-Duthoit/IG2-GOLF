@@ -16,15 +16,24 @@
 #include "users.h"
 
 
-#define printAppSrv(fmt, ...) printf("\x1b[1;36mAPP SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
 #define printIHM(fmt, ...) printf("\x1b[1;31mIHM (MAIN)\x1b[0m] " fmt, ##__VA_ARGS__)
 
+
+typedef enum {
+    LIST = 1,
+    LOBBY_HOTE, 
+    LOBBY_CLIENT, 
+
+} game_state_t; 
 
 
 void * serv_applicatif(void * arg);
 void * requetes_recurrentes_reg_1s(void * arg);
 int get_local_ip(char *buffer);
-
+void updateLIST(); 
+void renderLIST(); 
+void updateLOBBY(); 
+void renderLOBBY(); 
 
 
 requete_t *req_send_clt2reg = NULL;
@@ -32,6 +41,9 @@ pthread_mutex_t MUT_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t end_reqrep_clt2reg = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t MUT_END_REQREP_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
 
+pthread_mutex_t MUT_CLT2APP;
+requete_t *req_send_clt2app;
+pthread_cond_t end_reqrep_clt2app;
 
 
 short PORT_SRV_REG;
@@ -43,11 +55,13 @@ char IP_LOC[100];
 char buff_pseudos_hotes[TAILLE_OPT];
 char buff_info_joueur[TAILLE_OPT];
 users_t hotes;
+users_t clients_app; 
 
 socket_t sa_reg;
 socket_t se;
 
-
+game_state_t game_state; 
+name_t pseudo;
 
 int main(int argc, char **argv) {
 
@@ -67,10 +81,12 @@ int main(int argc, char **argv) {
     }
 
 
-    name_t pseudo;
+    
     printf("PSEUDO : ");
     fgets(pseudo, MAX_NAME, stdin);
     pseudo[strlen(pseudo)-1] = '\0';
+
+    game_state = LIST; 
 
 
     pthread_t th_clt2reg;
@@ -113,124 +129,15 @@ int main(int argc, char **argv) {
 
     while (!WindowShouldClose()) {  // tant que la fenêtre ne doit pas se fermer
 
-
-        // partie IHM (clics, etc...)
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
-
-            // récupération de la position de la souris
-            int mouse_x = GetMouseX();
-            int mouse_y = GetMouseY();
-
-            // bouton host
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
-                pthread_mutex_lock(&MUT_CLT2REG);
-
-                req.idReq=UPDT_CLIENT_STATE;
-                strcpy(req.verbReq, "UPDT_CLIENT_STATE");
-                
-                snprintf(req.optReq, TAILLE_OPT, "%s:H", pseudo);
-                            
-                if (req_send_clt2reg == NULL) {
-                    req_send_clt2reg = malloc(sizeof(requete_t));
-                    *req_send_clt2reg = req;
-                }
-
-                pthread_mutex_unlock(&MUT_CLT2REG);
-            }
-
-            // bouton online
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 30, 30})) {
-                pthread_mutex_lock(&MUT_CLT2REG);
-
-                req.idReq=UPDT_CLIENT_STATE;
-                strcpy(req.verbReq, "UPDT_CLIENT_STATE");
-                
-                snprintf(req.optReq, TAILLE_OPT, "%s:O", pseudo);
-                            
-                if (req_send_clt2reg == NULL) {
-                    req_send_clt2reg = malloc(sizeof(requete_t));
-                    *req_send_clt2reg = req;
-                }
-
-                pthread_mutex_unlock(&MUT_CLT2REG);
-
-            }
-
-            // bouton full
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 30, 30})) {
-                pthread_mutex_lock(&MUT_CLT2REG);
-
-                req.idReq=UPDT_CLIENT_STATE;
-                strcpy(req.verbReq, "UPDT_CLIENT_STATE");
-                
-                snprintf(req.optReq, TAILLE_OPT, "%s:F", pseudo);
-                            
-                if (req_send_clt2reg == NULL) {
-                    req_send_clt2reg = malloc(sizeof(requete_t));
-                    *req_send_clt2reg = req;
-                }
-
-                pthread_mutex_unlock(&MUT_CLT2REG);
-            }
+        if (game_state == LIST){
+            updateLIST(); 
+            renderLIST(); 
+        }
+        else if (game_state == LOBBY_HOTE){
+            updateLOBBY();
+            renderLOBBY();
         }
 
-
-        // partie affichage
-        BeginDrawing();
-
-            ClearBackground(RAYWHITE);
-            DrawText("ETAT :", 10, 10, 20, BLACK);
-
-            // bouton host
-            DrawRectangle(10, 30, 30, 30, GRAY);
-            DrawText("H", 13, 33, 20, BLACK);
-
-            // bouton online
-            DrawRectangle(50, 30, 30, 30, GRAY);
-            DrawText("O", 53, 33, 20, BLACK);
-
-            // bouton full
-            DrawRectangle(90, 30, 30, 30, GRAY);
-            DrawText("F", 93, 33, 20, BLACK);
-
-            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {  // clic gauche
-
-                // récupération de la position de la souris
-                int mouse_x = GetMouseX();
-                int mouse_y = GetMouseY();
-
-                // bouton host
-                if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
-                    DrawRectangle(10, 30, 30, 30, GREEN);
-                    DrawText("H", 13, 33, 20, DARKGREEN);
-                }
-
-                // bouton online
-                if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 30, 30})) {
-                    DrawRectangle(50, 30, 30, 30, GREEN);
-                    DrawText("O", 53, 33, 20, DARKGREEN);
-                }
-
-                // bouton full
-                if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 30, 30})) {
-                    DrawRectangle(90, 30, 30, 30, GREEN);
-                    DrawText("F", 93, 33, 20, DARKGREEN);
-                }
-            }
-
-            // affichage @IP + port
-            DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_LOC, PORT_SRV_APP), 10, 70, 20, BLACK);
-            DrawText("Liste des hotes : ", 10, 90, 20, BLACK);
-
-            for (int i=0; i<hotes.nbUsers; i++) {
-                DrawText(TextFormat("> %s  - %s : %hu", hotes.tab[i].name, hotes.tab[i].adrIP, hotes.tab[i].port_srv_app), 10, 110+(20*i), 20, BLACK);
-            }
-
-
-
-            DrawFPS(10, 450-20);
-        
-        EndDrawing();
     }
 
     CloseWindow();
@@ -282,7 +189,23 @@ void * serv_applicatif(void * arg) {
     se = creerSocketEcoute("0.0.0.0", 0);
 
     CHECK(getsockname(se.fd, (struct sockaddr *)&se.addrLoc, &lenMyAddr),"--getsockname()--");    
-    PORT_SRV_APP = se.addrLoc.sin_port;
+    PORT_SRV_APP = ntohs(se.addrLoc.sin_port);
+
+    socket_t sd;
+
+     while(1) {
+        
+        printAppSrv("Attente de connexion\n");
+        sd = accepterClt(se);
+
+        pthread_t th;
+        socket_t *sd_p = (socket_t*)malloc(sizeof(socket_t));
+        *sd_p = sd;
+        pthread_create(&th, NULL, dialApp2Clt, (void*)sd_p);
+        pthread_detach(th);        
+    }
+
+    close(se.fd); // la socket d'écoute n'est jamais fermée
 
 
     pthread_exit(EXIT_SUCCESS);
@@ -358,3 +281,244 @@ void * requetes_recurrentes_reg_1s(void * arg) {
 
 }
 
+
+void updateLIST(){
+
+    requete_t req;
+
+    // partie IHM (clics, etc...)
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
+
+        // récupération de la position de la souris
+        int mouse_x = GetMouseX();
+        int mouse_y = GetMouseY();
+
+        // bouton host
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
+            pthread_mutex_lock(&MUT_CLT2REG);
+
+            req.idReq=UPDT_CLIENT_STATE;
+            strcpy(req.verbReq, "UPDT_CLIENT_STATE");
+            
+            snprintf(req.optReq, TAILLE_OPT, "%s:H", pseudo);
+                        
+            if (req_send_clt2reg == NULL) {
+                req_send_clt2reg = malloc(sizeof(requete_t));
+                *req_send_clt2reg = req;
+            }
+
+            pthread_mutex_unlock(&MUT_CLT2REG);
+
+            game_state = LOBBY_HOTE; 
+        }
+
+        // bouton online
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 30, 30})) {
+            pthread_mutex_lock(&MUT_CLT2REG);
+
+            req.idReq=UPDT_CLIENT_STATE;
+            strcpy(req.verbReq, "UPDT_CLIENT_STATE");
+            
+            snprintf(req.optReq, TAILLE_OPT, "%s:O", pseudo);
+                        
+            if (req_send_clt2reg == NULL) {
+                req_send_clt2reg = malloc(sizeof(requete_t));
+                *req_send_clt2reg = req;
+            }
+
+            pthread_mutex_unlock(&MUT_CLT2REG);
+
+
+
+        }
+
+        // bouton full
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 30, 30})) {
+            pthread_mutex_lock(&MUT_CLT2REG);
+
+            req.idReq=UPDT_CLIENT_STATE;
+            strcpy(req.verbReq, "UPDT_CLIENT_STATE");
+            
+            snprintf(req.optReq, TAILLE_OPT, "%s:F", pseudo);
+                        
+            if (req_send_clt2reg == NULL) {
+                req_send_clt2reg = malloc(sizeof(requete_t));
+                *req_send_clt2reg = req;
+            }
+
+            pthread_mutex_unlock(&MUT_CLT2REG);
+        }
+
+        for (int i=0; i<hotes.nbUsers; i++) {
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 110+(20*i), 20, 20})) {
+                printIHM("Creation du thread de comm \"dialClt2App\" ...\n");
+
+                pthread_t th_dialClt2App;
+                char* adrSrvApp = (char*) malloc(100 * sizeof(char));
+                snprintf(adrSrvApp, 100, "%hu:%s", hotes.tab[i].port_srv_app, hotes.tab[i].adrIP);
+                pthread_create(&th_dialClt2App, NULL, dialClt2App, adrSrvApp);
+                pthread_detach(th_dialClt2App);
+
+
+
+                pthread_mutex_lock(&MUT_CLT2APP);
+
+                req.idReq=JOIN_GAME;
+                strcpy(req.verbReq, "JOIN_GAME");
+                strcpy(req.optReq, pseudo);
+                                            
+                if (req_send_clt2app == NULL) {
+                    req_send_clt2app = malloc(sizeof(requete_t));
+                    *req_send_clt2app = req;
+                }
+
+                pthread_mutex_unlock(&MUT_CLT2APP);
+
+                printIHM("... Connexion\n");
+            }
+        }
+    }
+
+}
+
+
+void renderLIST(){
+    // partie affichage
+    BeginDrawing();
+
+        ClearBackground(RAYWHITE);
+        DrawText("ETAT :", 10, 10, 20, BLACK);
+
+        // bouton host
+        DrawRectangle(10, 30, 30, 30, GRAY);
+        DrawText("H", 13, 33, 20, BLACK);
+
+        // bouton online
+        DrawRectangle(50, 30, 30, 30, GRAY);
+        DrawText("O", 53, 33, 20, BLACK);
+
+        // bouton full
+        DrawRectangle(90, 30, 30, 30, GRAY);
+        DrawText("F", 93, 33, 20, BLACK);
+
+        // récupération de la position de la souris
+        int mouse_x = GetMouseX();
+        int mouse_y = GetMouseY();
+
+            
+        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {  // clic gauche
+
+
+            // bouton host
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
+                DrawRectangle(10, 30, 30, 30, GREEN);
+                DrawText("H", 13, 33, 20, DARKGREEN);
+            }
+
+            // bouton online
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 30, 30})) {
+                DrawRectangle(50, 30, 30, 30, GREEN);
+                DrawText("O", 53, 33, 20, DARKGREEN);
+            }
+
+            // bouton full
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 30, 30})) {
+                DrawRectangle(90, 30, 30, 30, GREEN);
+                DrawText("F", 93, 33, 20, DARKGREEN);
+            }
+        }
+
+        // affichage @IP + port
+        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_LOC, PORT_SRV_APP), 10, 70, 20, BLACK);
+        DrawText("Liste des hotes : ", 10, 90, 20, BLACK);
+
+        for (int i=0; i<hotes.nbUsers; i++) {
+            DrawRectangle(10, 110+(20*i), 20, 20, GRAY);
+            DrawText(">", 10, 110+(20*i), 20, BLACK);
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 110+(20*i), 20, 20})) {
+                DrawRectangle(10, 110+(20*i), 20, 20, GREEN);
+                DrawText(">", 10, 110+(20*i), 20, DARKGREEN);
+            }
+            DrawText(TextFormat("> %s  - %s : %hu", hotes.tab[i].name, hotes.tab[i].adrIP, hotes.tab[i].port_srv_app), 40, 110+(20*i), 20, BLACK);
+        }
+
+
+
+        DrawFPS(10, 450-20);
+    
+    EndDrawing();
+}
+
+
+void updateLOBBY(){
+    requete_t req; 
+
+    // partie IHM (clics, etc...)
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
+
+        // récupération de la position de la souris
+        int mouse_x = GetMouseX();
+        int mouse_y = GetMouseY();
+        
+        // bouton quitter
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
+            pthread_mutex_lock(&MUT_CLT2REG);
+
+            req.idReq=UPDT_CLIENT_STATE;
+            strcpy(req.verbReq, "UPDT_CLIENT_STATE");
+            
+            snprintf(req.optReq, TAILLE_OPT, "%s:O", pseudo);
+                        
+            if (req_send_clt2reg == NULL) {
+                req_send_clt2reg = malloc(sizeof(requete_t));
+                *req_send_clt2reg = req;
+            }
+
+            pthread_mutex_unlock(&MUT_CLT2REG);
+
+            game_state = LIST; 
+
+        }
+
+    }
+
+} 
+
+
+
+
+void renderLOBBY(){
+    // partie affichage
+    BeginDrawing();
+
+        ClearBackground(RAYWHITE);
+
+        // bouton quitter
+        DrawRectangle(760, 30, 30, 30, GRAY);
+        DrawText("X", 770, 35, 20, BLACK);
+
+
+        // récupération de la position de la souris
+        int mouse_x = GetMouseX();
+        int mouse_y = GetMouseY();
+
+        // bouton quitter
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
+            DrawRectangle(760, 30, 30, 30, RED);
+            DrawText("X", 770, 35, 20, DARKGRAY);
+        }
+
+
+        // affichage @IP + port
+        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_LOC, PORT_SRV_APP), 10, 10, 20, BLACK);
+        
+        
+        //for (int i=0; i<hotes.nbUsers; i++) {
+        //    DrawText(TextFormat("> %s  - %s : %hu", hotes.tab[i].name, hotes.tab[i].adrIP, hotes.tab[i].port_srv_app), 40, 110+(20*i), 20, BLACK);
+        //}
+
+
+        DrawFPS(10, 450-20);
+
+    EndDrawing();
+}

@@ -5,11 +5,6 @@
 #include "dial.h"
 #include "reqRep.h"
 
-#define printClt2Reg(fmt, ...) printf("\x1b[1;32mTHREAD DIAL\x1b[0m] " fmt, ##__VA_ARGS__)
-#define printReg2Clt(fmt, ...) printf("\x1b[1;35mREGISTER SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
-#define printApp2Clt(fmt, ...) printf("\x1b[1;95mAPPLICATIVE SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
-#define printClt2App(fmt, ...) printf("\x1b[1;96mAPPLICATIVE SERVER\x1b[0m] " fmt, ##__VA_ARGS__)
-
 
 #ifdef CLIENT
     extern pthread_mutex_t MUT_CLT2REG;
@@ -19,6 +14,12 @@
     extern char buff_pseudos_hotes[TAILLE_OPT];
     extern pthread_cond_t end_reqrep_clt2reg;
     extern char buff_info_joueur[TAILLE_OPT];
+
+    extern users_t clients_app; 
+
+    extern pthread_mutex_t MUT_CLT2APP;
+    extern requete_t *req_send_clt2app;
+    extern pthread_cond_t end_reqrep_clt2app;
 #endif
 
 #ifdef SERVER
@@ -26,11 +27,13 @@
 #endif
 
 
-void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd);
+void traMettre des switchs dans les fonctions
+//TODO : Changer le prototype des fonct reponse_t * rep, socket_t * sd);
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep); 
 void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep); 
 void traiterDIS_PLAYER(requete_t * req, reponse_t * rep);
 void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep);
+void traiterJOIN_GAME(requete_t * req, reponse_t * rep); 
 
 //  --------------------------------------- SERVEUR D'ENREGISTREMENT | CLIENT -----------------------------
 
@@ -47,7 +50,6 @@ void * dialReg2Clt(void * sd_p) {
 
         if (req.idReq==END_DIAL) {
             printReg2Clt("\x1b[1;31mEND_DIAL RECU\x1b[0m\n");
-            getchar();
             break;
         }
 
@@ -153,48 +155,39 @@ void * dialClt2Reg(void * sa_p) {
         if(req.idReq == END_DIAL) {
             break;
         }
-
-        if (  // TODO: mettre que les requetes où on attend une réponse
-            req.idReq == REG_PLAYER
-            || 1
-        ) {
+        recevoir(&sa, &rep, (pFct)str2rep);
 
 
-            recevoir(&sa, &rep, (pFct)str2rep);
-
-
-            switch (rep.idRep)
-            {
-                case OK_REG_SERV:
-                    printClt2Reg("Rep : OK_REG_SERV [%hu]\n", OK_REG_SERV);
-                    break;
-                case HOST_LIST:
-                    printClt2Reg("Rep : HOST_LIST [%hu]\n", HOST_LIST);
-                    printClt2Reg("      Options : %s\n", rep.optRep);
-                    #ifdef CLIENT
-                    strcpy(buff_pseudos_hotes, rep.optRep);
-                    #endif
-                    break;
-                case PLAYER_DETAILS:
-                    printClt2Reg("Rep : PLAYER_DETAILS [%hu]\n", PLAYER_DETAILS);
-                    printClt2Reg("      Options : %s\n", rep.optRep);
-                    #ifdef CLIENT
-                    strcpy(buff_info_joueur, rep.optRep);
-                    #endif
-                    break;
-                case ERR_REG_SERV:
-                    printClt2Reg("Rep : ERR_REG_SERV [%hu]\n", ERR_REG_SERV);
-                    // TODO: faire la gestion d'erreur
-                    break;
-                    
-                default:
-                    break;
-            }
-
-            strcpy(rep.optRep, "");
-            strcpy(rep.verbRep, "");
+        switch (rep.idRep)
+        {
+            case OK_REG_SERV:
+                printClt2Reg("Rep : OK_REG_SERV [%hu]\n", OK_REG_SERV);
+                break;
+            case HOST_LIST:
+                printClt2Reg("Rep : HOST_LIST [%hu]\n", HOST_LIST);
+                printClt2Reg("      Options : %s\n", rep.optRep);
+                #ifdef CLIENT
+                strcpy(buff_pseudos_hotes, rep.optRep);
+                #endif
+                break;
+            case PLAYER_DETAILS:
+                printClt2Reg("Rep : PLAYER_DETAILS [%hu]\n", PLAYER_DETAILS);
+                printClt2Reg("      Options : %s\n", rep.optRep);
+                #ifdef CLIENT
+                strcpy(buff_info_joueur, rep.optRep);
+                #endif
+                break;
+            case ERR_REG_SERV:
+                printClt2Reg("Rep : ERR_REG_SERV [%hu]\n", ERR_REG_SERV);
+                // TODO: faire la gestion d'erreur
+                break;
+                
+            default:
+                break;
         }
 
+        strcpy(rep.optRep, "");
+        strcpy(rep.verbRep, "");
         
         #ifdef CLIENT
         pthread_cond_signal(&end_reqrep_clt2reg);
@@ -375,6 +368,8 @@ void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep){
         strcpy(rep->verbRep, "ERR_REG_SERV");
     }
 
+    free(detailsUser); 
+
 }
 
 
@@ -400,7 +395,6 @@ void * dialApp2Clt(void * sd_p) {
 
         if (req.idReq==END_DIAL) {
             printApp2Clt("\x1b[1;31mEND_DIAL RECU\x1b[0m\n");
-            getchar();
             break;
         }
 
@@ -410,6 +404,7 @@ void * dialApp2Clt(void * sd_p) {
 
             case JOIN_GAME : 
                 printApp2Clt("      Options : %s\n", rep.optRep);
+                traiterJOIN_GAME(&req, &rep); 
                 break; 
 
             case GET_PLAYERS_LIST : 
@@ -446,9 +441,117 @@ void * dialApp2Clt(void * sd_p) {
 
 
 
-void * dialClt2App(void * sa_p) {
+void * dialClt2App(void * adrSrvApp) {  // adrSrvApp = "port:IP"
     
+    socket_t sa;
+    
+    #ifdef CLIENT
+    char ip_app[50];
+    short port_app;
 
+    sscanf(adrSrvApp, "%hu:%[^\n]", &port_app, ip_app);
+    printClt2App("Connexion à %s:%hu\n", ip_app, port_app);
+    sa = connecterClt2Srv(ip_app, port_app);
+    free(adrSrvApp);
+    #endif
+
+    requete_t req;
+    reponse_t rep;
+    while(1) {
+
+        #ifdef CLIENT
+        pthread_mutex_lock(&MUT_CLT2APP);
+
+        if (req_send_clt2app != NULL) {
+            req.idReq = req_send_clt2app->idReq;
+            strcpy(req.optReq, req_send_clt2app->optReq);
+            strcpy(req.verbReq, req_send_clt2app->verbReq);
+
+            free(req_send_clt2app);
+            req_send_clt2app = NULL;
+
+            pthread_mutex_unlock(&MUT_CLT2APP);
+
+        } else {
+            pthread_mutex_unlock(&MUT_CLT2APP);
+            continue;
+        }
+
+        #endif
+
+        printClt2Reg("Req : %s [%hu]\n", req.verbReq, req.idReq);
+        
+        envoyer(&sa, &req, (pFct)req2str);
+
+
+
+        if(req.idReq == END_DIAL) {
+            break;
+        }
+        
+        recevoir(&sa, &rep, (pFct)str2rep);
+
+
+        switch (rep.idRep)
+        {
+            case OK_APP_SERV:
+                printClt2App("Rep : OK_APP_SERV [%hu]\n", OK_APP_SERV);
+                // TODO: faire la gestion des aquisitions
+                break;
+                
+            case NOK_APP_SERV:
+                printClt2App("Rep : NOK_APP_SERV [%hu]\n", NOK_APP_SERV);
+                // TODO: faire la gestion des erreurs
+                break;
+
+            default:
+                break;
+        }
+
+        strcpy(rep.optRep, "");
+        strcpy(rep.verbRep, "");
+        
+        #ifdef CLIENT
+        pthread_cond_signal(&end_reqrep_clt2app);
+        #endif
+
+    }
+    CHECK(close(sa.fd), "--close-");
+
+    pthread_exit(EXIT_SUCCESS);
+
+}
+
+
+void traiterJOIN_GAME(requete_t * req, reponse_t * rep){
+    name_t username; 
+    int i=0;
+
+    sscanf(req->optReq, "%s", username);
+
+    printf("username : %s\n", username); 
+
+
+    #ifdef CLIENT
+        if (clients_app.nbUsers < NB_JOUEURS_MAX){
+
+            strcpy(clients_app.tab[clients_app.nbUsers].name, username); 
+
+            rep->idRep = OK_APP_SERV; 
+            strcpy(rep->optRep, ""); 
+            strcpy(rep->verbRep, "OK_APP_SERV");
+
+            clients_app.nbUsers++; 
+
+        }else{
+            
+            rep->idRep = NOK_APP_SERV; 
+            strcpy(rep->optRep, ""); 
+            strcpy(rep->verbRep, "NOK_APP_SERV");
+
+        }
+
+    #endif 
 
 }
 
@@ -459,135 +562,3 @@ void * dialClt2App(void * sa_p) {
 
 
 //  ------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-// void dialSrv2CltEcoute(socket_t sd) {
-
-//     requete_t req;  
-//     reponse_t rep;
-
-//     while (1) {
-//         //recevoir(sd, &req, (pFct)str2req);
-//         switch(req.idReq) {
-//             case JOIN_GAME : break;
-//             case GET_PLAYERS_GAME : break;
-//             case LEAVE_GAME : break;
-//             case SHOOT : break;
-
-//             default : 
-//                 break; 
-//         }
-//         if (req.idReq==END_DIAL) {
-//             break;
-//         }
-//     }
-
-//     //envoyer(sd, rep, rep2str); 
-//     CHECK(close(sd.fd), "--close()--");
-// }
-
-// void dialSrv2CltEnvoi(socket_t sd){
-
-//     requete_t req;  
-//     reponse_t rep;
-
-//     while (1) {
-//         //recevoir(sd, &req, (pFct)str2req);
-//         switch(req.idReq) {
-
-//             case UPDT_CLIENT_STATE : break;
-//             case GET_PLAYER_FROM_ID : break;
-//             case JOIN_GAME : break;
-//             case GET_PLAYERS_GAME : break;
-//             case LEAVE_GAME : break;
-//             case SHOOT : break;
-                        
-//             default : 
-//                 break; 
-//         }
-//         if (req.idReq==END_DIAL) {
-//             break;
-//         }
-//     }
-
-//     //envoyer(sd, rep, rep2str); 
-//     CHECK(close(sd.fd), "--close()--");
-// }
-
-
-
-
-// void dialClt2SrvEcoute(socket_t sa){
-//   requete_t req;
-//   reponse_t rep;
-//   while(1){
-//     // IHM : menu pour interaction utilisateur final
-//     // & création d'une requête
-//     //envoyer(sa, &req, (pFct)req2str);
-    
-//     if(req.idReq == END_DIAL) {
-//       break;
-//     }
-
-
-//     //switch (rep.idRep)
-//     //{
-//     //case constant expression:
-//         /* code */
-//     //    break;
-    
-//     //default:
-//     //    break;
-//     //}
-    
-//     //recevoir(sa, &rep, (pFct)strt2rep);
-    
-//     // traiter la réponse par le client
-
-
-//   }
-//   CHECK(close(sa.fd), "--close-");
-// }
-
-
-// void dialClt2SrvEnvoi(socket_t sa){
-//   requete_t req;
-//   reponse_t rep;
-//   while(1){
-//     // IHM : menu pour interaction utilisateur final
-//     // & création d'une requête
-//     //envoyer(sa, &req, (pFct)req2str);
-    
-//     if(req.idReq == END_DIAL) {
-//       break;
-//     }
-
-
-//     //switch (rep.idRep)
-//     //{
-//     //case constant expression:
-//         /* code */
-//     //    break;
-    
-//     //default:
-//     //    break;
-//     //}
-    
-//     //recevoir(sa, &rep, (pFct)strt2rep);
-    
-//     // traiter la réponse par le client
-
-
-//   }
-//   CHECK(close(sa.fd), "--close-");
-// }
