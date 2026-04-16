@@ -9,8 +9,6 @@
 #ifdef CLIENT
     extern pthread_mutex_t MUT_CLT2REG;
     extern requete_t *req_send_clt2reg;
-    extern short PORT_SRV_REG;
-    extern char IP_REG[100];
     extern char buff_pseudos_hotes[TAILLE_OPT];
     extern pthread_cond_t end_reqrep_clt2reg;
     extern char buff_info_joueur[TAILLE_OPT];
