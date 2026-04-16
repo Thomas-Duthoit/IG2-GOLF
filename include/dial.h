@@ -18,12 +18,12 @@ typedef void * (*pFctThread)(void *);
 
 
 // ---- SERVEUR D'ENREGISTREMENT | CLIENT -----------
-void * dialReg2Clt(socket_t * sd_p);
-void * dialClt2Reg(socket_t * sa_p);
+void * dialReg2Clt(socket_t * sd);
+void * dialClt2Reg(socket_t * sa);
 
 // ---- SERVEUR D'APPLICATION | CLIENT -----------
-void * dialApp2Clt(socket_t * sd_p); 
-void * dialClt2App(socket_t * sa_p); 
+void * dialApp2Clt(socket_t * sd); 
+void * dialClt2App(socket_t * sa); 
 
 
 
