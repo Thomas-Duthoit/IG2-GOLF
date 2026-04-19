@@ -5,12 +5,12 @@
 #include "dial.h"
 #include "reqRep.h"
 
-
 #ifdef CLIENT
-    extern pthread_mutex_t MUT_CLT2REG;
-    extern requete_t *req_send_clt2reg;
+    extern requete_t req_send_clt2reg;
     extern char buff_pseudos_hotes[TAILLE_OPT];
     extern pthread_cond_t end_reqrep_clt2reg;
+    extern pthread_cond_t start_reqrep_clt2reg;
+    extern pthread_mutex_t MUT_START_REQREP_CLT2REG;
     extern char buff_info_joueur[TAILLE_OPT];
 
     extern users_t clients_app; 
@@ -338,23 +338,13 @@ void * dialClt2Reg(socket_t * sa) {
     while(1) {
 
         #ifdef CLIENT
-        pthread_mutex_lock(&MUT_CLT2REG);
 
-        if (req_send_clt2reg != NULL) {
-            req.idReq = req_send_clt2reg->idReq;
-            strcpy(req.optReq, req_send_clt2reg->optReq);
-            strcpy(req.verbReq, req_send_clt2reg->verbReq);
+        pthread_cond_wait(&start_reqrep_clt2reg, &MUT_START_REQREP_CLT2REG);
 
-            free(req_send_clt2reg);
-            req_send_clt2reg = NULL;
-
-            pthread_mutex_unlock(&MUT_CLT2REG);
-
-        } else {
-            pthread_mutex_unlock(&MUT_CLT2REG);
-            continue;
-        }
-
+        req.idReq = req_send_clt2reg.idReq;
+        strcpy(req.optReq, req_send_clt2reg.optReq);
+        strcpy(req.verbReq, req_send_clt2reg.verbReq);
+        
         #endif
 
         printClt2Reg("Req : %s [%hu]\n", req.verbReq, req.idReq);

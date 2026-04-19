@@ -18,6 +18,9 @@
 
 #define printIHM(fmt, ...) printf("\x1b[1;31mIHM (MAIN)\x1b[0m] " fmt, ##__VA_ARGS__)
 
+#define envoi_avec_ack(cond_debut, cond_fin, mut_fin) pthread_cond_signal(&(cond_debut)); pthread_cond_wait(&(cond_fin), &(mut_fin));
+#define envoi_no_ack(cond_debut) pthread_cond_signal(&(cond_debut));  // pas d'attente d'ACK, par exmeple pour le END_DIAL
+
 
 typedef enum {
     LIST = 1,
@@ -38,10 +41,11 @@ void updateLOBBYClt();
 void renderLOBBYClt(); 
 
 
-requete_t *req_send_clt2reg = NULL;
-pthread_mutex_t MUT_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
+requete_t req_send_clt2reg;
 pthread_cond_t end_reqrep_clt2reg = PTHREAD_COND_INITIALIZER;
+pthread_cond_t start_reqrep_clt2reg = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t MUT_END_REQREP_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t MUT_START_REQREP_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
 
 pthread_mutex_t MUT_CLT2APP;
 requete_t *req_send_clt2app;
@@ -101,8 +105,6 @@ int main(int argc, char **argv) {
     pthread_t th_app_srv;
     pthread_t th_req_rec;
 
-    requete_t req;
-
     sa_reg = connecterClt2Srv(IP_REG, PORT_SRV_REG);
 
     pthread_create(&th_clt2reg, NULL, (pFctThread)dialClt2Reg, (void*)&sa_reg);
@@ -112,21 +114,14 @@ int main(int argc, char **argv) {
 
 
     while (PORT_SRV_APP == 0) { } // attente de l'attribution du port avant la connection au serveur d'neregistrement
-    
-    pthread_mutex_lock(&MUT_CLT2REG);
 
-        req.idReq=REG_PLAYER;
-        strcpy(req.verbReq, "REG_PLAYER");
-        sprintf(req.optReq, "%s:%s:%hu", pseudo, IP_SERVICE, PORT_SRV_APP);
 
-        if (req_send_clt2reg == NULL) {
-            req_send_clt2reg = malloc(sizeof(requete_t));
-            *req_send_clt2reg = req;
-        }        
+    req_send_clt2reg.idReq=REG_PLAYER;
+    strcpy(req_send_clt2reg.verbReq, "REG_PLAYER");
+    sprintf(req_send_clt2reg.optReq, "%s:%s:%hu", pseudo, IP_SERVICE, PORT_SRV_APP);     
 
-    pthread_mutex_unlock(&MUT_CLT2REG);
+    envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
 
-    while (req_send_clt2reg != NULL) {};  // attente de l'envoi confirmé
 
     
 
@@ -157,35 +152,18 @@ int main(int argc, char **argv) {
     CloseWindow();
 
     // Déconnexion
-    pthread_mutex_lock(&MUT_CLT2REG);
-
-    req.idReq=DIS_PLAYER;
-    strcpy(req.verbReq, "DIS_PLAYER");
-    strcpy(req.optReq, pseudo);
+    req_send_clt2reg.idReq=DIS_PLAYER;
+    strcpy(req_send_clt2reg.verbReq, "DIS_PLAYER");
+    strcpy(req_send_clt2reg.optReq, pseudo);
                 
-    if (req_send_clt2reg == NULL) {
-        req_send_clt2reg = malloc(sizeof(requete_t));
-        *req_send_clt2reg = req;
-    }
+    envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
 
-    pthread_mutex_unlock(&MUT_CLT2REG);
 
-    while (req_send_clt2reg != NULL) {};  // attente de l'envoi confirmé
+    req_send_clt2reg.idReq=END_DIAL;
+    strcpy(req_send_clt2reg.verbReq, "END_DIAL");
+    strcpy(req_send_clt2reg.optReq, "");
 
-    pthread_mutex_lock(&MUT_CLT2REG);
-
-        req.idReq=END_DIAL;
-        strcpy(req.verbReq, "END_DIAL");
-        strcpy(req.optReq, "");
-                 
-        if (req_send_clt2reg == NULL) {
-            req_send_clt2reg = malloc(sizeof(requete_t));
-            *req_send_clt2reg = req;
-        }
-
-    pthread_mutex_unlock(&MUT_CLT2REG);
-
-    while (req_send_clt2reg != NULL) {};  // attente de l'envoi confirmé
+    envoi_no_ack(start_reqrep_clt2reg);
 
     return 0;
 }
@@ -234,28 +212,16 @@ void * requetes_recurrentes_reg_1s(void * arg) {
     // partie envoie récurrents
     // contenu de la boucle exécuté une fois par seconde
 
-    requete_t req;
-
     while (1) {
         sleep(1);        
 
-        pthread_mutex_lock(&MUT_CLT2REG);
-
-        req.idReq=GET_HOSTS_LIST;
-        strcpy(req.verbReq, "GET_HOSTS_LIST");
-        strcpy(req.optReq, "");
+        req_send_clt2reg.idReq=GET_HOSTS_LIST;
+        strcpy(req_send_clt2reg.verbReq, "GET_HOSTS_LIST");
+        strcpy(req_send_clt2reg.optReq, "");
                     
-        if (req_send_clt2reg == NULL) {
-            req_send_clt2reg = malloc(sizeof(requete_t));
-            *req_send_clt2reg = req;
-        }
-
-        pthread_mutex_unlock(&MUT_CLT2REG);
-
-        pthread_cond_wait(&end_reqrep_clt2reg, &MUT_END_REQREP_CLT2REG);  // attente fin de comm
+        envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
 
 
-        pthread_mutex_lock(&MUT_CLT2REG);
 
         char copie_buff_pseudo_hotes[TAILLE_OPT];
         strcpy(copie_buff_pseudo_hotes, buff_pseudos_hotes);
@@ -267,24 +233,14 @@ void * requetes_recurrentes_reg_1s(void * arg) {
             tok = strtok(NULL, ":" );
         }
         hotes.nbUsers = i;
-        pthread_mutex_unlock(&MUT_CLT2REG);
 
         for (int j=0; j<hotes.nbUsers; j++) {
-            pthread_mutex_lock(&MUT_CLT2REG);
 
-            req.idReq=GET_PLAYER_FROM_ID;
-            strcpy(req.verbReq, "GET_PLAYER_FROM_ID");
-            strcpy(req.optReq, hotes.tab[j].name);
+            req_send_clt2reg.idReq=GET_PLAYER_FROM_ID;
+            strcpy(req_send_clt2reg.verbReq, "GET_PLAYER_FROM_ID");
+            strcpy(req_send_clt2reg.optReq, hotes.tab[j].name);
                         
-            if (req_send_clt2reg == NULL) {
-                req_send_clt2reg = malloc(sizeof(requete_t));
-                *req_send_clt2reg = req;
-            }
-
-            pthread_mutex_unlock(&MUT_CLT2REG);
-
-            pthread_cond_wait(&end_reqrep_clt2reg, &MUT_END_REQREP_CLT2REG);  // attente fin de comm
-
+            envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
 
             sscanf(buff_info_joueur, "%c:%[^:]:%hu\n", &hotes.tab[j].etat, hotes.tab[j].adrIP, &hotes.tab[j].port_srv_app);
 
@@ -297,8 +253,6 @@ void * requetes_recurrentes_reg_1s(void * arg) {
 
 void updateLIST(){
 
-    requete_t req;
-
     // partie IHM (clics, etc...)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
 
@@ -308,61 +262,40 @@ void updateLIST(){
 
         // bouton host
         if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
-            pthread_mutex_lock(&MUT_CLT2REG);
 
-            req.idReq=UPDT_CLIENT_STATE;
-            strcpy(req.verbReq, "UPDT_CLIENT_STATE");
-            
-            snprintf(req.optReq, TAILLE_OPT, "%s:H", pseudo);
+            req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
+            strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
+            snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:H", pseudo);
                         
-            if (req_send_clt2reg == NULL) {
-                req_send_clt2reg = malloc(sizeof(requete_t));
-                *req_send_clt2reg = req;
-            }
-
-            pthread_mutex_unlock(&MUT_CLT2REG);
+            envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
 
             game_state = LOBBY_HOTE; 
         }
 
         // bouton online
         if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 30, 30})) {
-            pthread_mutex_lock(&MUT_CLT2REG);
 
-            req.idReq=UPDT_CLIENT_STATE;
-            strcpy(req.verbReq, "UPDT_CLIENT_STATE");
-            
-            snprintf(req.optReq, TAILLE_OPT, "%s:O", pseudo);
+            req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
+            strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
+            snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:O", pseudo);
                         
-            if (req_send_clt2reg == NULL) {
-                req_send_clt2reg = malloc(sizeof(requete_t));
-                *req_send_clt2reg = req;
-            }
-
-            pthread_mutex_unlock(&MUT_CLT2REG);
-
-
-
+            envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
         }
 
         // bouton full
         if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 30, 30})) {
-            pthread_mutex_lock(&MUT_CLT2REG);
 
-            req.idReq=UPDT_CLIENT_STATE;
-            strcpy(req.verbReq, "UPDT_CLIENT_STATE");
-            
-            snprintf(req.optReq, TAILLE_OPT, "%s:F", pseudo);
+            req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
+            strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
+            snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:F", pseudo);
                         
-            if (req_send_clt2reg == NULL) {
-                req_send_clt2reg = malloc(sizeof(requete_t));
-                *req_send_clt2reg = req;
-            }
-
-            pthread_mutex_unlock(&MUT_CLT2REG);
+            envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
         }
 
         for (int i=0; i<hotes.nbUsers; i++) {
+
+            requete_t req;
+
             if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 110+(20*i), 20, 20})) {
                 printIHM("Creation du thread de comm \"dialClt2App\" ...\n");
 
@@ -469,7 +402,6 @@ void renderLIST(){
 
 
 void updateLOBBY(){
-    requete_t req; 
 
     // partie IHM (clics, etc...)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
@@ -480,20 +412,12 @@ void updateLOBBY(){
         
         // bouton quitter
         if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
-            
-            pthread_mutex_lock(&MUT_CLT2REG);
 
-            req.idReq=UPDT_CLIENT_STATE;
-            strcpy(req.verbReq, "UPDT_CLIENT_STATE");
-            
-            snprintf(req.optReq, TAILLE_OPT, "%s:O", pseudo);
+            req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
+            strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
+            snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:O", pseudo);
                         
-            if (req_send_clt2reg == NULL) {
-                req_send_clt2reg = malloc(sizeof(requete_t));
-                *req_send_clt2reg = req;
-            }
-
-            pthread_mutex_unlock(&MUT_CLT2REG);
+            envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
 
             game_state = LIST; 
 
