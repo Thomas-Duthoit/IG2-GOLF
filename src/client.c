@@ -34,6 +34,8 @@ void updateLIST();
 void renderLIST(); 
 void updateLOBBY(); 
 void renderLOBBY(); 
+void updateLOBBYClt(); 
+void renderLOBBYClt(); 
 
 
 requete_t *req_send_clt2reg = NULL;
@@ -56,6 +58,8 @@ char buff_pseudos_hotes[TAILLE_OPT];
 char buff_info_joueur[TAILLE_OPT];
 users_t hotes;
 users_t clients_app; 
+
+user_t hote_serv_app;  
 
 socket_t sa_reg;
 socket_t se;
@@ -81,6 +85,9 @@ int main(int argc, char **argv) {
         hotes.tab[i].adrIP = (char *)malloc(sizeof(char)*16); 
     }
 
+
+    // Allocation pour hôte du serveur applicatif rejoint
+    hote_serv_app.adrIP = (char *)malloc(sizeof(char)*16); 
 
     
     printf("PSEUDO : ");
@@ -139,6 +146,10 @@ int main(int argc, char **argv) {
         else if (game_state == LOBBY_HOTE){
             updateLOBBY();
             renderLOBBY();
+        }
+        else if (game_state == LOBBY_CLIENT){
+            updateLOBBYClt();
+            renderLOBBYClt();
         }
 
     }
@@ -378,6 +389,10 @@ void updateLIST(){
                 pthread_mutex_unlock(&MUT_CLT2APP);
 
                 printIHM("... Connexion\n");
+                
+                strcpy(hote_serv_app.name, pseudo); 
+
+                game_state = LOBBY_CLIENT; 
             }
         }
     }
@@ -465,6 +480,7 @@ void updateLOBBY(){
         
         // bouton quitter
         if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
+            
             pthread_mutex_lock(&MUT_CLT2REG);
 
             req.idReq=UPDT_CLIENT_STATE;
@@ -514,6 +530,89 @@ void renderLOBBY(){
 
         // affichage @IP + port
         DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_SERVICE, PORT_SRV_APP), 10, 10, 20, BLACK);
+        
+        
+        for (int i=0; i<clients_app.nbUsers; i++) {
+            DrawText(TextFormat("> %s ", clients_app.tab[i].name), 40, 110+(20*i), 20, BLACK);
+        }
+
+
+        DrawFPS(10, 450-20);
+
+    EndDrawing();
+}
+
+
+
+
+void updateLOBBYClt(){
+    requete_t req; 
+
+    // partie IHM (clics, etc...)
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
+
+        // récupération de la position de la souris
+        int mouse_x = GetMouseX();
+        int mouse_y = GetMouseY();
+        
+        // bouton quitter
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
+            // Déconnexion du serveur applicatif
+            printIHM("Déconnexion de la partie ...\n"); 
+
+            pthread_mutex_lock(&MUT_CLT2APP);
+
+            req.idReq=LEAVE_GAME;
+            strcpy(req.verbReq, "LEAVE_GAME");
+            
+            snprintf(req.optReq, TAILLE_OPT, "%s", pseudo);
+                        
+            if (req_send_clt2app == NULL) {
+                req_send_clt2app = malloc(sizeof(requete_t));
+                *req_send_clt2app = req;
+            }
+
+            pthread_mutex_unlock(&MUT_CLT2APP);
+
+
+            game_state = LIST; 
+
+            printIHM("Déconnexion...\n"); 
+
+        }
+
+    }
+
+} 
+
+
+
+
+void renderLOBBYClt(){
+    // partie affichage
+    BeginDrawing();
+
+        ClearBackground(RAYWHITE);
+
+        // bouton quitter
+        DrawRectangle(760, 30, 30, 30, GRAY);
+        DrawText("X", 770, 35, 20, BLACK);
+
+
+        // récupération de la position de la souris
+        int mouse_x = GetMouseX();
+        int mouse_y = GetMouseY();
+
+        // bouton quitter
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
+            DrawRectangle(760, 30, 30, 30, RED);
+            DrawText("X", 770, 35, 20, DARKGRAY);
+        }
+
+        // TODO : Voir pour mettre le pseudo dans une autre couleur
+        DrawText(TextFormat("Bienvenue dans le serveur de [%s] !!", hote_serv_app.name), 10, 10, 20, BLACK);
+        // affichage @IP + port
+        //DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_SERVICE, PORT_SRV_APP), 20, 20, 20, BLACK);
         
         
         //for (int i=0; i<hotes.nbUsers; i++) {

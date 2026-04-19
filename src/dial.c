@@ -27,14 +27,24 @@
 
 
 //TODO: Changer le prototype des fonct reponse_t * rep, socket_t * sd);
+
+void switchReg2Clt(requete_t * req, reponse_t * rep, socket_t * sd); 
+void switchClt2Reg(requete_t * req, reponse_t * rep); 
+void switchApp2Clt(requete_t * req, reponse_t * rep); 
+void switchClt2App(requete_t * req, reponse_t * rep); 
+
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep); 
 void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep); 
 void traiterDIS_PLAYER(requete_t * req, reponse_t * rep);
 void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep);
-void traiterJOIN_GAME(requete_t * req, reponse_t * rep); 
 void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd);
 
+void traiterJOIN_GAME(requete_t * req, reponse_t * rep); 
+void traiterLEAVE_GAME(requete_t * req, reponse_t * rep); 
+
 //  --------------------------------------- SERVEUR D'ENREGISTREMENT | CLIENT -----------------------------
+
+#pragma region DIALREG2CLT
 
 void * dialReg2Clt(socket_t * sd) {
 
@@ -52,51 +62,7 @@ void * dialReg2Clt(socket_t * sd) {
 
         printReg2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
 
-        switch(req.idReq) {
-
-            case REG_PLAYER : 
-                
-                // Demande d'enregistrement du joueur
-                printReg2Clt("Options : %s\n", req.optReq);
-                traiterREG_PLAYER(&req, &rep, sd); 
-
-                break;
-                
-            case DIS_PLAYER : 
-
-                // Déconnexion d'un joueur
-                printReg2Clt("Options : %s\n", req.optReq);
-                traiterDIS_PLAYER(&req, &rep); 
-
-                break;
-            case JOIN_GAME : 
-                break;
-            case GET_HOSTS_LIST : 
-
-                // Envoi de la liste des hôtes
-                traiterGET_HOSTS_LIST(&req, &rep); 
-
-                break;
-            case UPDT_CLIENT_STATE : 
-                
-                // Changement de l'état du client 
-                printReg2Clt("Options : %s\n", req.optReq);
-                traiterUPDT_CLIENT_STATE(&req, &rep); 
-
-                break;
-            case GET_PLAYER_FROM_ID : 
-            
-                // Changement de l'état du client 
-                printReg2Clt("Options : %s\n", req.optReq);
-                traiterGET_PLAYER_FROM_ID(&req, &rep); 
-            
-                break;
-
-            default : 
-
-                printReg2Clt("Options inconnues\n"); 
-                break; 
-        }
+        switchReg2Clt(&req, &rep, sd); 
 
         envoyer(sd, &rep, (pFct)rep2str);
 
@@ -109,87 +75,73 @@ void * dialReg2Clt(socket_t * sd) {
 }
 
 
-void * dialClt2Reg(socket_t * sa) {
-
-    requete_t req;
-    reponse_t rep;
-    while(1) {
-
-        #ifdef CLIENT
-        pthread_mutex_lock(&MUT_CLT2REG);
-
-        if (req_send_clt2reg != NULL) {
-            req.idReq = req_send_clt2reg->idReq;
-            strcpy(req.optReq, req_send_clt2reg->optReq);
-            strcpy(req.verbReq, req_send_clt2reg->verbReq);
-
-            free(req_send_clt2reg);
-            req_send_clt2reg = NULL;
-
-            pthread_mutex_unlock(&MUT_CLT2REG);
-
-        } else {
-            pthread_mutex_unlock(&MUT_CLT2REG);
-            continue;
-        }
-
-        #endif
-
-        printClt2Reg("Req : %s [%hu]\n", req.verbReq, req.idReq);
-        
-        envoyer(sa, &req, (pFct)req2str);
 
 
 
-        if(req.idReq == END_DIAL) {
+
+    #pragma region SWITCH REG
+// ------------------------------ PARTIE SWITCH -----------------------------------------
+
+void switchReg2Clt(requete_t * req, reponse_t * rep, socket_t * sd){
+    switch(req->idReq) {
+
+        case REG_PLAYER : 
+            
+            // Demande d'enregistrement du joueur
+            printReg2Clt("Options : %s\n", req->optReq);
+            traiterREG_PLAYER(req, rep, sd); 
+
             break;
-        }
-        recevoir(sa, &rep, (pFct)str2rep);
+            
+        case DIS_PLAYER : 
 
+            // Déconnexion d'un joueur
+            printReg2Clt("Options : %s\n", req->optReq);
+            traiterDIS_PLAYER(req, rep); 
 
-        switch (rep.idRep)
-        {
-            case OK_REG_SERV:
-                printClt2Reg("Rep : OK_REG_SERV [%hu]\n", OK_REG_SERV);
-                break;
-            case HOST_LIST:
-                printClt2Reg("Rep : HOST_LIST [%hu]\n", HOST_LIST);
-                printClt2Reg("      Options : %s\n", rep.optRep);
-                #ifdef CLIENT
-                strcpy(buff_pseudos_hotes, rep.optRep);
-                #endif
-                break;
-            case PLAYER_DETAILS:
-                printClt2Reg("Rep : PLAYER_DETAILS [%hu]\n", PLAYER_DETAILS);
-                printClt2Reg("      Options : %s\n", rep.optRep);
-                #ifdef CLIENT
-                strcpy(buff_info_joueur, rep.optRep);
-                #endif
-                break;
-            case ERR_REG_SERV:
-                printClt2Reg("Rep : ERR_REG_SERV [%hu]\n", ERR_REG_SERV);
-                // TODO: faire la gestion d'erreur
-                break;
-                
-            default:
-                break;
-        }
+            break;
+        case GET_HOSTS_LIST : 
 
-        strcpy(rep.optRep, "");
-        strcpy(rep.verbRep, "");
+            // Envoi de la liste des hôtes
+            traiterGET_HOSTS_LIST(req, rep); 
+
+            break;
+        case UPDT_CLIENT_STATE : 
+            
+            // Changement de l'état du client 
+            printReg2Clt("Options : %s\n", req->optReq);
+            traiterUPDT_CLIENT_STATE(req, rep); 
+
+            break;
+        case GET_PLAYER_FROM_ID : 
         
-        #ifdef CLIENT
-        pthread_cond_signal(&end_reqrep_clt2reg);
-        #endif
+            // Changement de l'état du client 
+            printReg2Clt("Options : %s\n", req->optReq);
+            traiterGET_PLAYER_FROM_ID(req, rep); 
+    
+            break;
 
+        default : 
+
+            printReg2Clt("Options inconnues\n"); 
+            break; 
     }
-    CHECK(close(sa->fd), "--close-");
-
-    pthread_exit(EXIT_SUCCESS);
 }
 
+    #pragma endregion
+// -------------------------------------------------------------------------------------------------------
 
 
+
+
+
+
+
+
+
+
+
+    #pragma region TRAITEMENT REG
 // ------------------------------ TRAITEMENT SERVEUR ENREGISTREMENT -----------------------------------------
 
 
@@ -361,15 +313,139 @@ void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep){
 
 }
 
+    #pragma endregion
+// -------------------------------------------------------------------------------------------------------
+
+#pragma endregion
+
+
+
+
+
+
+
+
+
 
 // -------------------------------------------------------------------------------------------------------
+
+#pragma region DIALCLT2REG
+
+void * dialClt2Reg(socket_t * sa) {
+
+    requete_t req;
+    reponse_t rep;
+    while(1) {
+
+        #ifdef CLIENT
+        pthread_mutex_lock(&MUT_CLT2REG);
+
+        if (req_send_clt2reg != NULL) {
+            req.idReq = req_send_clt2reg->idReq;
+            strcpy(req.optReq, req_send_clt2reg->optReq);
+            strcpy(req.verbReq, req_send_clt2reg->verbReq);
+
+            free(req_send_clt2reg);
+            req_send_clt2reg = NULL;
+
+            pthread_mutex_unlock(&MUT_CLT2REG);
+
+        } else {
+            pthread_mutex_unlock(&MUT_CLT2REG);
+            continue;
+        }
+
+        #endif
+
+        printClt2Reg("Req : %s [%hu]\n", req.verbReq, req.idReq);
+        
+        envoyer(sa, &req, (pFct)req2str);
+
+
+
+        if(req.idReq == END_DIAL) {
+            break;
+        }
+        recevoir(sa, &rep, (pFct)str2rep);
+
+
+        switchClt2Reg(&req, &rep);
+
+        strcpy(rep.optRep, "");
+        strcpy(rep.verbRep, "");
+        
+        #ifdef CLIENT
+        pthread_cond_signal(&end_reqrep_clt2reg);
+        #endif
+
+    }
+    CHECK(close(sa->fd), "--close-");
+
+    pthread_exit(EXIT_SUCCESS);
+}
+
+
+
+
+
+ #pragma region SWITCH CLT/REG
+// ------------------------------ PARTIE SWITCH -----------------------------------------
+
+void switchClt2Reg(requete_t * req, reponse_t * rep){
+
+
+    switch (rep->idRep)
+    {
+        case OK_REG_SERV:
+            printClt2Reg("Rep : OK_REG_SERV [%hu]\n", OK_REG_SERV);
+            break;
+        case HOST_LIST:
+            printClt2Reg("Rep : HOST_LIST [%hu]\n", HOST_LIST);
+            printClt2Reg("      Options : %s\n", rep->optRep);
+            #ifdef CLIENT
+            strcpy(buff_pseudos_hotes, rep->optRep);
+            #endif
+            break;
+        case PLAYER_DETAILS:
+            printClt2Reg("Rep : PLAYER_DETAILS [%hu]\n", PLAYER_DETAILS);
+            printClt2Reg("      Options : %s\n", rep->optRep);
+            #ifdef CLIENT
+            strcpy(buff_info_joueur, rep->optRep);
+            #endif
+            break;
+        case ERR_REG_SERV:
+            printClt2Reg("Rep : ERR_REG_SERV [%hu]\n", ERR_REG_SERV);
+            // TODO: faire la gestion d'erreur
+            break;
+            
+        default:
+            break;
+    }
+
+
+}
+
+    #pragma endregion
+// -------------------------------------------------------------------------------------------------------
+
+
+
+
+
+#pragma endregion
 
 //  ------------------------------------------------------------------------------------------------------
 
 
 
+
+
+
+
+
 //  --------------------------------------- SERVEUR D'APPLICATION | CLIENT -----------------------------
 
+#pragma region DIALAPP2CLT
 
 void * dialApp2Clt(socket_t * sd) {
     
@@ -387,32 +463,9 @@ void * dialApp2Clt(socket_t * sd) {
 
         printApp2Clt("%s [%hu]\n", req.verbReq, req.idReq); 
 
-        switch(req.idReq) {
 
-            case JOIN_GAME : 
-                printApp2Clt("      Options : %s\n", rep.optRep);
-                traiterJOIN_GAME(&req, &rep); 
-                break; 
+        switchApp2Clt(&req, &rep); 
 
-            case GET_PLAYERS_LIST : 
-                printApp2Clt("      Options : %s\n", rep.optRep);
-                break; 
-
-            case LEAVE_GAME : 
-                printApp2Clt("      Options : %s\n", rep.optRep);
-                break; 
-
-
-            case SHOOT : 
-                printApp2Clt("      Options : %s\n", rep.optRep);
-                break; 
-
-
-            default : 
-
-                printApp2Clt("Options inconnues\n"); 
-                break; 
-        }
 
         envoyer(sd, &rep, (pFct)rep2str);
 
@@ -427,6 +480,155 @@ void * dialApp2Clt(socket_t * sd) {
 }
 
 
+
+
+ #pragma region SWITCH APP
+// ------------------------------ PARTIE SWITCH -----------------------------------------
+
+void switchApp2Clt(requete_t * req, reponse_t * rep){
+
+
+    switch(req->idReq) {
+
+        case JOIN_GAME : 
+            printApp2Clt("      Options : %s\n", rep->optRep);
+            traiterJOIN_GAME(req, rep); 
+            break; 
+
+        case GET_PLAYERS_LIST : 
+            printApp2Clt("      Options : %s\n", rep->optRep);
+            break; 
+
+        case LEAVE_GAME : 
+            printApp2Clt(" Déconnexion !!!\n"); 
+            printApp2Clt("      Options : %s\n", rep->optRep);
+            traiterLEAVE_GAME(req, rep); 
+            break; 
+
+
+        case SHOOT : 
+            printApp2Clt("      Options : %s\n", rep->optRep);
+            break; 
+
+
+        default : 
+
+            printApp2Clt("Options inconnues\n"); 
+            break; 
+    }
+
+
+}
+
+    #pragma endregion
+// -------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+// ------------------------------ TRAITEMENT APP / CLT -----------------------------------------
+
+    #pragma region TRAITEMENT APP
+
+void traiterJOIN_GAME(requete_t * req, reponse_t * rep){
+    name_t username; 
+
+    sscanf(req->optReq, "%s", username);
+
+    printf("username : %s\n", username); 
+
+
+    #ifdef CLIENT
+        if (clients_app.nbUsers < NB_JOUEURS_MAX){
+
+            strcpy(clients_app.tab[clients_app.nbUsers].name, username); 
+
+            rep->idRep = OK_APP_SERV; 
+            strcpy(rep->optRep, ""); 
+            strcpy(rep->verbRep, "OK_APP_SERV");
+
+            clients_app.nbUsers++; 
+
+        }else{
+            
+            rep->idRep = NOK_APP_SERV; 
+            strcpy(rep->optRep, ""); 
+            strcpy(rep->verbRep, "NOK_APP_SERV");
+
+        }
+
+    #endif 
+
+}
+
+
+
+
+void traiterLEAVE_GAME(requete_t * req, reponse_t * rep){
+    name_t username; 
+    int flag = 0; 
+    int i, j; 
+    
+    sscanf(req->optReq, "%s", username); 
+
+    printf("Username : %s quitte\n", username);
+
+    #ifdef CLIENT 
+        // Vérifie que le joueur existe
+        for (i = 0; i < clients_app.nbUsers; i++){
+            if(strcmp(clients_app.tab[i].name, username) == 0){
+                flag = 1; 
+                continue; 
+            }
+        }
+
+
+        if (flag == 1){
+            // Supprime le joueur de la liste
+            for (int j = i+1; j < clients_app.nbUsers; j++ ){
+                strcpy(clients_app.tab[i].name, clients_app.tab[j].name); 
+                i++; 
+            }
+
+            rep->idRep = OK_APP_SERV; 
+            strcpy(rep->optRep, ""); 
+            strcpy(rep->verbRep, "OK_APP_SERV");
+
+            clients_app.nbUsers--; 
+
+        }
+        else{
+
+            rep->idRep = NOK_APP_SERV; 
+            strcpy(rep->optRep, ""); 
+            strcpy(rep->verbRep, "NOK_APP_SERV");
+
+        }
+
+    #endif 
+
+
+}
+
+    #pragma endregion
+// -------------------------------------------------------------------------------------------------------
+
+
+
+#pragma endregion
+
+
+
+
+
+
+
+
+//  ------------------------------------------------------------------------------------------------------
+
+#pragma region DIALCLT2APP
 
 void * dialClt2App(socket_t * sa) {  // adrSrvApp = "port:IP"
 
@@ -467,21 +669,8 @@ void * dialClt2App(socket_t * sa) {  // adrSrvApp = "port:IP"
         recevoir(sa, &rep, (pFct)str2rep);
 
 
-        switch (rep.idRep)
-        {
-            case OK_APP_SERV:
-                printClt2App("Rep : OK_APP_SERV [%hu]\n", OK_APP_SERV);
-                // TODO: faire la gestion des aquisitions
-                break;
-                
-            case NOK_APP_SERV:
-                printClt2App("Rep : NOK_APP_SERV [%hu]\n", NOK_APP_SERV);
-                // TODO: faire la gestion des erreurs
-                break;
+        switchClt2App(&req, &rep); 
 
-            default:
-                break;
-        }
 
         strcpy(rep.optRep, "");
         strcpy(rep.verbRep, "");
@@ -498,39 +687,55 @@ void * dialClt2App(socket_t * sa) {  // adrSrvApp = "port:IP"
 }
 
 
-void traiterJOIN_GAME(requete_t * req, reponse_t * rep){
-    name_t username; 
-    int i=0;
-
-    sscanf(req->optReq, "%s", username);
-
-    printf("username : %s\n", username); 
 
 
-    #ifdef CLIENT
-        if (clients_app.nbUsers < NB_JOUEURS_MAX){
+ #pragma region SWITCH CLT2APP
+// ------------------------------ PARTIE SWITCH -----------------------------------------
 
-            strcpy(clients_app.tab[clients_app.nbUsers].name, username); 
+void switchClt2App(requete_t * req, reponse_t * rep){
 
-            rep->idRep = OK_APP_SERV; 
-            strcpy(rep->optRep, ""); 
-            strcpy(rep->verbRep, "OK_APP_SERV");
 
-            clients_app.nbUsers++; 
+    switch (rep->idRep)
+    {
+        case OK_APP_SERV:
+            printClt2App("Rep : OK_APP_SERV [%hu]\n", OK_APP_SERV);
+            // TODO: faire la gestion des aquisitions
 
-        }else{
+
+
+
+
+
+
+            break;
             
-            rep->idRep = NOK_APP_SERV; 
-            strcpy(rep->optRep, ""); 
-            strcpy(rep->verbRep, "NOK_APP_SERV");
+        case NOK_APP_SERV:
+            printClt2App("Rep : NOK_APP_SERV [%hu]\n", NOK_APP_SERV);
+            // TODO: faire la gestion des erreurs
+            break;
 
-        }
+        default:
+            break;
+    }
 
-    #endif 
 
 }
 
+    #pragma endregion
+// -------------------------------------------------------------------------------------------------------
 
+
+
+
+
+
+
+
+
+
+#pragma endregion
+
+//  ------------------------------------------------------------------------------------------------------
 
 
 
