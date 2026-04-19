@@ -52,6 +52,10 @@ requete_t *req_send_clt2app;
 pthread_cond_t end_reqrep_clt2app;
 
 
+pthread_cond_t cond_port_srv_app_alloue = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t MUT_COND_PORT_SRV_APP_ALLOUE = PTHREAD_MUTEX_INITIALIZER;
+
+
 short PORT_SRV_REG;
 short PORT_SRV_APP = 0;
 char INTERFACE[50]; 
@@ -113,7 +117,7 @@ int main(int argc, char **argv) {
     pthread_detach(th_app_srv);
 
 
-    while (PORT_SRV_APP == 0) { } // attente de l'attribution du port avant la connection au serveur d'neregistrement
+    pthread_cond_wait(&cond_port_srv_app_alloue, &MUT_COND_PORT_SRV_APP_ALLOUE);
 
 
     req_send_clt2reg.idReq=REG_PLAYER;
@@ -181,6 +185,8 @@ void * serv_applicatif(void * arg) {
 
     CHECK(getsockname(se.fd, (struct sockaddr *)&se.addrLoc, &lenMyAddr),"--getsockname()--");    
     PORT_SRV_APP = ntohs(se.addrLoc.sin_port);
+
+    pthread_cond_signal(&cond_port_srv_app_alloue);  // adressage fini -> on signale au main
 
     socket_t sd;
 
