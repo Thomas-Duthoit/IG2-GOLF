@@ -15,9 +15,19 @@
 
     extern users_t clients_app; 
 
-    extern pthread_mutex_t MUT_CLT2APP;
-    extern requete_t *req_send_clt2app;
-    extern pthread_cond_t end_reqrep_clt2app;
+
+    extern requete_t req_send_clt2app; 
+    extern pthread_cond_t end_reqrep_clt2app; 
+    extern pthread_cond_t start_reqrep_clt2app; 
+    extern pthread_mutex_t MUT_START_REQREP_CLT2APP; 
+
+    extern pthread_cond_t start_thread_clt2app; 
+    extern pthread_mutex_t MUT_START_THREAD_CLT2APP; 
+
+
+    //extern pthread_mutex_t MUT_CLT2APP;
+    //extern requete_t *req_send_clt2app;
+    //extern pthread_cond_t end_reqrep_clt2app;
 #endif
 
 #ifdef SERVER
@@ -445,6 +455,7 @@ void * dialApp2Clt(socket_t * sd) {
     while (1) {
         
         recevoir(sd, &req, (pFct)str2req);
+        printApp2Clt("Message reçu\n"); 
 
         if (req.idReq==END_DIAL) {
             printApp2Clt("\x1b[1;31mEND_DIAL RECU\x1b[0m\n");
@@ -482,6 +493,7 @@ void switchApp2Clt(requete_t * req, reponse_t * rep){
 
         case JOIN_GAME : 
             printApp2Clt("      Options : %s\n", rep->optRep);
+            printApp2Clt("\n\nJOIN_GAME\n\n"); 
             traiterJOIN_GAME(req, rep); 
             break; 
 
@@ -624,27 +636,22 @@ void * dialClt2App(socket_t * sa) {  // adrSrvApp = "port:IP"
 
     requete_t req;
     reponse_t rep;
+    
+    printf("THREAD dialClt2App lancé\n");
+
     while(1) {
 
+
         #ifdef CLIENT
-        pthread_mutex_lock(&MUT_CLT2APP);
+        pthread_cond_signal(&start_thread_clt2app); 
+        pthread_cond_wait(&start_reqrep_clt2app, &MUT_START_REQREP_CLT2APP);
 
-        if (req_send_clt2app != NULL) {
-            req.idReq = req_send_clt2app->idReq;
-            strcpy(req.optReq, req_send_clt2app->optReq);
-            strcpy(req.verbReq, req_send_clt2app->verbReq);
-
-            free(req_send_clt2app);
-            req_send_clt2app = NULL;
-
-            pthread_mutex_unlock(&MUT_CLT2APP);
-
-        } else {
-            pthread_mutex_unlock(&MUT_CLT2APP);
-            continue;
-        }
-
+        req.idReq = req_send_clt2app.idReq;
+        strcpy(req.optReq, req_send_clt2app.optReq);
+        strcpy(req.verbReq, req_send_clt2app.verbReq);
+        
         #endif
+
 
         printClt2Reg("Req : %s [%hu]\n", req.verbReq, req.idReq);
         

@@ -47,9 +47,20 @@ pthread_cond_t start_reqrep_clt2reg = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t MUT_END_REQREP_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUT_START_REQREP_CLT2REG = PTHREAD_MUTEX_INITIALIZER;
 
-pthread_mutex_t MUT_CLT2APP;
-requete_t *req_send_clt2app;
-pthread_cond_t end_reqrep_clt2app;
+
+//pthread_mutex_t MUT_CLT2APP;
+//requete_t *req_send_clt2app;
+//pthread_cond_t end_reqrep_clt2app;
+
+requete_t req_send_clt2app; 
+pthread_cond_t end_reqrep_clt2app = PTHREAD_COND_INITIALIZER; 
+pthread_cond_t start_reqrep_clt2app = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t MUT_END_REQREP_CLT2APP = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t MUT_START_REQREP_CLT2APP = PTHREAD_MUTEX_INITIALIZER;
+
+
+pthread_cond_t start_thread_clt2app = PTHREAD_COND_INITIALIZER; 
+pthread_mutex_t MUT_START_THREAD_CLT2APP = PTHREAD_MUTEX_INITIALIZER; 
 
 
 pthread_cond_t cond_port_srv_app_alloue = PTHREAD_COND_INITIALIZER;
@@ -313,19 +324,17 @@ void updateLIST(){
                 pthread_detach(th_dialClt2App);
 
 
+                pthread_cond_wait(&start_thread_clt2app, &MUT_START_THREAD_CLT2APP); 
 
-                pthread_mutex_lock(&MUT_CLT2APP);
+                
+                req_send_clt2app.idReq=JOIN_GAME; 
+                strcpy(req_send_clt2app.verbReq, "JOIN_GAME"); 
+                strcpy(req_send_clt2app.optReq, pseudo); 
 
-                req.idReq=JOIN_GAME;
-                strcpy(req.verbReq, "JOIN_GAME");
-                strcpy(req.optReq, pseudo);
-                                            
-                if (req_send_clt2app == NULL) {
-                    req_send_clt2app = malloc(sizeof(requete_t));
-                    *req_send_clt2app = req;
-                }
+                printIHM("...Attente de l'ack\n"); 
 
-                pthread_mutex_unlock(&MUT_CLT2APP);
+                envoi_avec_ack(start_reqrep_clt2app, end_reqrep_clt2app, MUT_END_REQREP_CLT2APP); 
+
 
                 printIHM("... Connexion\n");
                 
@@ -490,20 +499,11 @@ void updateLOBBYClt(){
             // Déconnexion du serveur applicatif
             printIHM("Déconnexion de la partie ...\n"); 
 
-            pthread_mutex_lock(&MUT_CLT2APP);
+            req_send_clt2app.idReq=LEAVE_GAME; 
+            strcpy(req_send_clt2app.verbReq, "LEAVE_GAME"); 
+            strcpy(req_send_clt2app.optReq, pseudo); 
 
-            req.idReq=LEAVE_GAME;
-            strcpy(req.verbReq, "LEAVE_GAME");
-            
-            snprintf(req.optReq, TAILLE_OPT, "%s", pseudo);
-                        
-            if (req_send_clt2app == NULL) {
-                req_send_clt2app = malloc(sizeof(requete_t));
-                *req_send_clt2app = req;
-            }
-
-            pthread_mutex_unlock(&MUT_CLT2APP);
-
+            envoi_no_ack(start_reqrep_clt2app); 
 
             game_state = LIST; 
 
