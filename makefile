@@ -6,10 +6,16 @@
 
 
 CCFLAGS = -Iinclude/
+CFLAGS = 
 LDFLAGS = -Llib/raylib/src -Llib/libINET/ -lraylib -lm	-ldl -lpthread -lX11 -lINET
 
+ifeq ($(MAKECMDGOALS),debug)
+    CFLAGS += -DDEBUG
+endif
 
 all: raylib bin/client bin/server
+
+debug: all
 
 raylib:
 	@echo "Compilation de raylib"
@@ -35,14 +41,14 @@ bin/client: src/client.c libINET.a src/reqRep.c src/dial.c src/users.c
 	@echo "Compilation du client"
 	mkdir -p build
 	mkdir -p bin
-	gcc $(CCFLAGS) src/client.c src/reqRep.c src/dial.c src/users.c $(LDFLAGS) -DCLIENT -o bin/client
+	gcc $(CCFLAGS) $(CFLAGS) src/client.c src/reqRep.c src/dial.c src/users.c $(LDFLAGS) -DCLIENT -o bin/client
 
 
 bin/server: src/server.c libINET.a src/reqRep.c src/dial.c src/users.c
 	@echo "Compilation du serveur"
 	mkdir -p build
 	mkdir -p bin
-	gcc $(CCFLAGS) src/server.c src/reqRep.c src/dial.c src/users.c $(LDFLAGS) -DSERVER -o bin/server
+	gcc $(CCFLAGS) $(CFLAGS) src/server.c src/reqRep.c src/dial.c src/users.c $(LDFLAGS) -DSERVER -o bin/server
 
 
 clean:
