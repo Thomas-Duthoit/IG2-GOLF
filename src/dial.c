@@ -1,9 +1,12 @@
 #include <string.h>
 #include <pthread.h>
+#include <arpa/inet.h>
 #include "users.h"
 #include "data.h"
 #include "dial.h"
 #include "reqRep.h"
+
+
 
 #ifdef CLIENT
     extern requete_t req_send_clt2reg;
@@ -24,6 +27,11 @@
     extern pthread_cond_t start_thread_clt2app; 
     extern pthread_mutex_t MUT_START_THREAD_CLT2APP; 
 
+    extern requete_t req_send_multi;
+    extern pthread_cond_t end_req_multitoclts;
+    extern pthread_cond_t start_req_multitoclts;
+    extern pthread_mutex_t MUT_START_REQ_MUTLITOCLTS;
+
 
     //extern pthread_mutex_t MUT_CLT2APP;
     //extern requete_t *req_send_clt2app;
@@ -42,6 +50,7 @@ void switchReg2Clt(requete_t * req, reponse_t * rep, socket_t * sd);
 void switchClt2Reg(requete_t * req, reponse_t * rep); 
 void switchApp2Clt(requete_t * req, reponse_t * rep); 
 void switchClt2App(requete_t * req, reponse_t * rep); 
+void switchRecvFromApp(requete_t * req);
 
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep); 
 void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep); 
@@ -639,11 +648,14 @@ void * dialClt2App(socket_t * sa) {  // adrSrvApp = "port:IP"
     
     printf("THREAD dialClt2App lancé\n");
 
+    #ifdef CLIENT
+    pthread_cond_signal(&start_thread_clt2app); 
+    #endif
+
     while(1) {
 
 
         #ifdef CLIENT
-        pthread_cond_signal(&start_thread_clt2app); 
         pthread_cond_wait(&start_reqrep_clt2app, &MUT_START_REQREP_CLT2APP);
 
         req.idReq = req_send_clt2app.idReq;
@@ -736,6 +748,105 @@ void switchClt2App(requete_t * req, reponse_t * rep){
 
 
 
+//  --------------------------------------- SERVEUR D'APPLICATION | CLIENT (MULTICAST) -------------------
+
+
+#pragma region MULTISENDTOCLTS
+
+void * multiSendToClts(socket_t * sm) {
+    requete_t req;
+    
+    printf("THREAD multiSendToClts lancé\n");
+
+    while(1) {
+
+
+        #ifdef CLIENT
+        pthread_cond_wait(&start_req_multitoclts, &MUT_START_REQ_MUTLITOCLTS);
+
+        req.idReq = req_send_multi.idReq;
+        strcpy(req.optReq, req_send_multi.optReq);
+        strcpy(req.verbReq, req_send_multi.verbReq);
+        
+        #endif
+        printMulticast("Req : %s [%hu]\n", req.verbReq, req.idReq);
+        
+        // envoyer(sm, &req, (pFct)req2str);
+        char *ip = inet_ntoa(sm->addrDst.sin_addr);
+        int port = ntohs(sm->addrDst.sin_port);
+        printMulticast("Multicast vers %s:%d\n", ip, port);
+        envoyer(sm, &req, (pFct)req2str, ip, port);
+
+        if(req.idReq == END_DIAL) {
+            break;
+        }
+        #ifdef CLIENT
+        pthread_cond_signal(&end_req_multitoclts);
+        #endif
+
+    }
+    CHECK(close(sm->fd), "--close-");
+
+    pthread_exit(EXIT_SUCCESS);
+}
+
+#pragma endregion
+
+
+
+//  ------------------------------------------------------------------------------------------------------
+
+#pragma region MULTIRECVFROMAPP
+
+void * multiRecvFromApp(socket_t * sam) {
+    requete_t req;  
+
+    printMulticast("Thread multiRecvFromApp lancé !\n");
+
+    while (1) {
+        
+        recevoir(sam, &req, (pFct)str2req);
+        printMulticast("Message reçu\n"); 
+
+        if (req.idReq==END_DIAL) {
+            printMulticast("\x1b[1;31mEND_DIAL RECU\x1b[0m\n");
+            break;
+        }
+
+        printMulticast("%s [%hu]\n", req.verbReq, req.idReq); 
+
+        switchRecvFromApp(&req); 
+    } 
+    
+    CHECK(close(sam->fd), "--close()--");
+
+    pthread_exit(EXIT_SUCCESS);
+}
+
+#pragma endregion
+
+
+//  ------------------------------------------------------------------------------------------------------
+
+#pragma region SWITCHMULTICAST
+
+void switchRecvFromApp(requete_t * req) {
+
+    // TODO: IMPLEMENTER switchRecvFromApp
+    printMulticast("TODO: IMPLEMENTER switchRecvFromApp\n");
+
+    switch (req->idReq)
+    {
+            
+        default:
+            break;
+    }
+
+
+}
+
+
+#pragma endregion
 
 
 //  ------------------------------------------------------------------------------------------------------

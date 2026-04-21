@@ -152,3 +152,52 @@ struct sockaddr_in getIPAddr(char * name) {
 			}	
 	} 
 }
+
+/**
+ *	\fn			socket_t connecterClt2Multi (char *adrIP, short port)
+ *	\brief		Crétaion d'une socket d'appel et connexion a une socket multicast
+ *	\param		adrIP : adresse IP du serveur à connecter
+ *	\param		port : port TCP du serveur à connecter
+ *	\result		socket connectée au serveur fourni en paramètre
+ */
+socket_t connecterClt2Multi (char *adrIP, short port) {
+
+    socket_t sock = creerSocket(SOCK_DGRAM);
+
+    int reuse = 1;
+    CHECK(setsockopt(sock.fd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)),
+          "__SO_REUSEADDR__");
+
+    adr2struct(&(sock.addrLoc), "0.0.0.0", port);
+
+    CHECK(bind(sock.fd, (struct sockaddr*)&sock.addrLoc, sizeof(sock.addrLoc)), "__bind__");
+
+    // rejoindre le multicast
+    struct ip_mreq mreq;
+    mreq.imr_multiaddr.s_addr = inet_addr(adrIP);
+    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+
+    CHECK(setsockopt(sock.fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)),
+          "__IP_ADD_MEMBERSHIP__");
+
+    return sock;
+}
+
+/**
+ *	\fn			creerSocketMulti (char *adrIP, short port)
+ *	\brief		Création d'une socket multicast
+ *	\param		adrIP : adresse IP
+ *	\param		port : port
+ *	\result		socket créée avec l'adressage fourni en paramètre 
+ *	\note		Le domaine est nécessairement DGRAM
+ */
+socket_t creerSocketMulti (char *adrIP, short port) {
+    socket_t sock = creerSocket(SOCK_DGRAM);
+
+    adr2struct(&sock.addrDst, adrIP, port);
+
+    int ttl = 1;
+    setsockopt(sock.fd, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
+
+    return sock;
+}

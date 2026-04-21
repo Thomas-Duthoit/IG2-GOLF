@@ -124,5 +124,23 @@ socket_t connecterClt2Srv (char *adrIP, short port);
 
 struct sockaddr_in getIPAddr(char * name);
 
+/**
+ *	\fn			socket_t connecterClt2Multi (char *adrIP, short port)
+ *	\brief		Crétaion d'une socket d'appel et connexion a une socket multicast
+ *	\param		adrIP : adresse IP du serveur à connecter
+ *	\param		port : port TCP du serveur à connecter
+ *	\result		socket connectée au serveur fourni en paramètre
+ */
+socket_t connecterClt2Multi (char *adrIP, short port);
+
+/**
+ *	\fn			creerSocketMulti (char *adrIP, short port)
+ *	\brief		Création d'une socket multicast
+ *	\param		adrIP : adresse IP
+ *	\param		port : port
+ *	\result		socket créée avec l'adressage fourni en paramètre 
+ *	\note		Le domaine est nécessairement DGRAM
+ */
+socket_t creerSocketMulti (char *adrIP, short port);
 
 #endif /* SESSION_H */

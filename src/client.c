@@ -66,12 +66,19 @@ pthread_mutex_t MUT_START_THREAD_CLT2APP = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond_port_srv_app_alloue = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t MUT_COND_PORT_SRV_APP_ALLOUE = PTHREAD_MUTEX_INITIALIZER;
 
+requete_t req_send_multi;
+pthread_cond_t end_req_multitoclts = PTHREAD_COND_INITIALIZER;
+pthread_cond_t start_req_multitoclts = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t MUT_END_REQ_MUTLITOCLTS = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t MUT_START_REQ_MUTLITOCLTS = PTHREAD_MUTEX_INITIALIZER;
+
 
 short PORT_SRV_REG;
 short PORT_SRV_APP = 0;
 char INTERFACE[50]; 
 char IP_REG[100];
 char IP_SERVICE[100];
+char IP_MULTICAST[100] = "239.0.0.1";
 
 char buff_pseudos_hotes[TAILLE_OPT];
 char buff_info_joueur[TAILLE_OPT];
@@ -83,6 +90,8 @@ user_t hote_serv_app;
 socket_t sa_reg;
 socket_t se;
 socket_t sa;
+socket_t sam;  // socket d'appel multicast
+socket_t sm;  // socket multicast
 
 game_state_t game_state; 
 name_t pseudo;
@@ -197,6 +206,13 @@ void * serv_applicatif(void * arg) {
     CHECK(getsockname(se.fd, (struct sockaddr *)&se.addrLoc, &lenMyAddr),"--getsockname()--");    
     PORT_SRV_APP = ntohs(se.addrLoc.sin_port);
 
+    sm = creerSocketMulti(IP_MULTICAST, PORT_SRV_APP);
+
+    pthread_t th_multiSendToClts;
+
+    pthread_create(&th_multiSendToClts, NULL, (pFctThread)multiSendToClts, (void*)&sm);
+    pthread_detach(th_multiSendToClts);
+
     pthread_cond_signal(&cond_port_srv_app_alloue);  // adressage fini -> on signale au main
 
     socket_t sd;
@@ -211,6 +227,18 @@ void * serv_applicatif(void * arg) {
         *sd_p = sd;
         pthread_create(&th, NULL, (pFctThread)dialApp2Clt, (void*)sd_p);
         pthread_detach(th);        
+
+        // TODO: test uniquement, supprimer après
+        sleep(1);
+
+        req_send_multi.idReq = START_GAME;
+        strcpy(req_send_multi.verbReq, "START_GAME");
+        strcpy(req_send_multi.optReq, "");
+
+        envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
+
+        // --------------------------------------
+
     }
 
     close(se.fd); // la socket d'écoute n'est jamais fermée
@@ -317,15 +345,19 @@ void updateLIST(){
                 printIHM("Creation du thread de comm \"dialClt2App\" ...\n");
 
                 pthread_t th_dialClt2App;
+                pthread_t th_multiRecvFromApp;
 
                 sa = connecterClt2Srv(hotes.tab[i].adrIP, hotes.tab[i].port_srv_app);
 
                 pthread_create(&th_dialClt2App, NULL, (pFctThread)dialClt2App, (void*)&sa);
                 pthread_detach(th_dialClt2App);
 
-
                 pthread_cond_wait(&start_thread_clt2app, &MUT_START_THREAD_CLT2APP); 
 
+                sam = connecterClt2Multi(IP_MULTICAST, hotes.tab[i].port_srv_app);
+
+                pthread_create(&th_multiRecvFromApp, NULL, (pFctThread)multiRecvFromApp, (void*)&sam);
+                pthread_detach(th_multiRecvFromApp);
                 
                 req_send_clt2app.idReq=JOIN_GAME; 
                 strcpy(req_send_clt2app.verbReq, "JOIN_GAME"); 
