@@ -72,8 +72,8 @@ pthread_cond_t start_req_multitoclts = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t MUT_END_REQ_MUTLITOCLTS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUT_START_REQ_MUTLITOCLTS = PTHREAD_MUTEX_INITIALIZER;
 
-bool connection_serv_reg_ok;
-bool connection_serv_app_ok;
+bool connexion_serv_reg_ok;
+bool connexion_serv_app_ok;
 
 
 short PORT_SRV_REG;
@@ -147,11 +147,11 @@ int main(int argc, char **argv) {
     strcpy(req_send_clt2reg.verbReq, "REG_PLAYER");
     sprintf(req_send_clt2reg.optReq, "%s:%s:%hu", pseudo, IP_SERVICE, PORT_SRV_APP);     
 
-    connection_serv_reg_ok = true;  // le thread de dialogue passera le flag à false si la connexion échoue
+    connexion_serv_reg_ok = true;  // le thread de dialogue passera le flag à false si la connexion échoue
 
     envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
 
-    if (connection_serv_reg_ok) {
+    if (connexion_serv_reg_ok) {
         printIHM("Connexion au serveur d'enregistrement OK !\n");
     }
     else {
@@ -378,14 +378,21 @@ void updateLIST(){
 
                 printIHM("...Attente de l'ack\n"); 
 
+                connexion_serv_app_ok = true;  // le thread de dialogue le passera à false si la connexion échoue
+
                 envoi_avec_ack(start_reqrep_clt2app, end_reqrep_clt2app, MUT_END_REQREP_CLT2APP); 
 
+                if (connexion_serv_app_ok) {
+                    printIHM("... Connexion\n");
+                    
+                    strcpy(hote_serv_app.name, pseudo); 
 
-                printIHM("... Connexion\n");
+                    game_state = LOBBY_CLIENT; 
+                } else {
+                    printIHM("ERREUR: connexion refusée\n");
+
+                }
                 
-                strcpy(hote_serv_app.name, pseudo); 
-
-                game_state = LOBBY_CLIENT; 
             }
         }
     }

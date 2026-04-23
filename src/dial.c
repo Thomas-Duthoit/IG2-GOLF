@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <string.h>
 #include <pthread.h>
 #include <arpa/inet.h>
@@ -32,8 +33,8 @@
     extern pthread_cond_t start_req_multitoclts;
     extern pthread_mutex_t MUT_START_REQ_MUTLITOCLTS;
 
-    extern bool connection_serv_reg_ok;
-    extern bool connection_serv_app_ok;
+    extern bool connexion_serv_reg_ok;
+    extern bool connexion_serv_app_ok;
 
 
     //extern pthread_mutex_t MUT_CLT2APP;
@@ -413,20 +414,20 @@ void switchClt2Reg(reponse_t rep){
             printClt2Reg("Rep : HOST_LIST [%hu]\n", HOST_LIST);
             printClt2Reg("      Options : %s\n", rep.optRep);
             #ifdef CLIENT
-            strcpy(buff_pseudos_hotes, rep->optRep);
+            strcpy(buff_pseudos_hotes, rep.optRep);
             #endif
             break;
         case PLAYER_DETAILS:
             printClt2Reg("Rep : PLAYER_DETAILS [%hu]\n", PLAYER_DETAILS);
             printClt2Reg("      Options : %s\n", rep.optRep);
             #ifdef CLIENT
-            strcpy(buff_info_joueur, rep->optRep);
+            strcpy(buff_info_joueur, rep.optRep);
             #endif
             break;
         case ERR_REG_SERV:
             printClt2Reg("Rep : ERR_REG_SERV [%hu]\n", ERR_REG_SERV);
             #ifdef CLIENT
-            connection_serv_reg_ok = 0;
+            connexion_serv_reg_ok = 0;
             #endif
             break;
             
@@ -711,19 +712,13 @@ void switchClt2App(requete_t * req, reponse_t * rep){
     {
         case OK_APP_SERV:
             printClt2App("Rep : OK_APP_SERV [%hu]\n", OK_APP_SERV);
-            // TODO: faire la gestion des aquisitions
-
-
-
-
-
-
-
             break;
             
         case NOK_APP_SERV:
             printClt2App("Rep : NOK_APP_SERV [%hu]\n", NOK_APP_SERV);
-            // TODO: faire la gestion des erreurs
+            #ifdef CLIENT
+            connexion_serv_app_ok = 0;
+            #endif
             break;
 
         default:
