@@ -32,6 +32,9 @@
     extern pthread_cond_t start_req_multitoclts;
     extern pthread_mutex_t MUT_START_REQ_MUTLITOCLTS;
 
+    extern bool connection_serv_reg_ok;
+    extern bool connection_serv_app_ok;
+
 
     //extern pthread_mutex_t MUT_CLT2APP;
     //extern requete_t *req_send_clt2app;
@@ -47,7 +50,7 @@
 //TODO: Changer le prototype des fonct reponse_t * rep, socket_t * sd);
 
 void switchReg2Clt(requete_t * req, reponse_t * rep, socket_t * sd); 
-void switchClt2Reg(requete_t * req, reponse_t * rep); 
+void switchClt2Reg(reponse_t rep);
 void switchApp2Clt(requete_t * req, reponse_t * rep); 
 void switchClt2App(requete_t * req, reponse_t * rep); 
 void switchRecvFromApp(requete_t * req);
@@ -371,14 +374,13 @@ void * dialClt2Reg(socket_t * sa) {
         envoyer(sa, &req, (pFct)req2str);
 
 
-
         if(req.idReq == END_DIAL) {
             break;
         }
         recevoir(sa, &rep, (pFct)str2rep);
 
 
-        switchClt2Reg(&req, &rep);
+        switchClt2Reg(rep);
 
         strcpy(rep.optRep, "");
         strcpy(rep.verbRep, "");
@@ -396,35 +398,36 @@ void * dialClt2Reg(socket_t * sa) {
 
 
 
-
  #pragma region SWITCH CLT/REG
 // ------------------------------ PARTIE SWITCH -----------------------------------------
 
-void switchClt2Reg(requete_t * req, reponse_t * rep){
+void switchClt2Reg(reponse_t rep){
 
 
-    switch (rep->idRep)
+    switch (rep.idRep)
     {
         case OK_REG_SERV:
             printClt2Reg("Rep : OK_REG_SERV [%hu]\n", OK_REG_SERV);
             break;
         case HOST_LIST:
             printClt2Reg("Rep : HOST_LIST [%hu]\n", HOST_LIST);
-            printClt2Reg("      Options : %s\n", rep->optRep);
+            printClt2Reg("      Options : %s\n", rep.optRep);
             #ifdef CLIENT
             strcpy(buff_pseudos_hotes, rep->optRep);
             #endif
             break;
         case PLAYER_DETAILS:
             printClt2Reg("Rep : PLAYER_DETAILS [%hu]\n", PLAYER_DETAILS);
-            printClt2Reg("      Options : %s\n", rep->optRep);
+            printClt2Reg("      Options : %s\n", rep.optRep);
             #ifdef CLIENT
             strcpy(buff_info_joueur, rep->optRep);
             #endif
             break;
         case ERR_REG_SERV:
             printClt2Reg("Rep : ERR_REG_SERV [%hu]\n", ERR_REG_SERV);
-            // TODO: faire la gestion d'erreur
+            #ifdef CLIENT
+            connection_serv_reg_ok = 0;
+            #endif
             break;
             
         default:

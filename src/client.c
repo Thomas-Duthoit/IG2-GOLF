@@ -72,6 +72,9 @@ pthread_cond_t start_req_multitoclts = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t MUT_END_REQ_MUTLITOCLTS = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t MUT_START_REQ_MUTLITOCLTS = PTHREAD_MUTEX_INITIALIZER;
 
+bool connection_serv_reg_ok;
+bool connection_serv_app_ok;
+
 
 short PORT_SRV_REG;
 short PORT_SRV_APP = 0;
@@ -144,7 +147,17 @@ int main(int argc, char **argv) {
     strcpy(req_send_clt2reg.verbReq, "REG_PLAYER");
     sprintf(req_send_clt2reg.optReq, "%s:%s:%hu", pseudo, IP_SERVICE, PORT_SRV_APP);     
 
+    connection_serv_reg_ok = true;  // le thread de dialogue passera le flag à false si la connexion échoue
+
     envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
+
+    if (connection_serv_reg_ok) {
+        printIHM("Connexion au serveur d'enregistrement OK !\n");
+    }
+    else {
+        printIHM("ERREUR: Connexion au serveur d'enregistrement échouée...\n");
+        exit(EXIT_FAILURE);
+    }
 
 
     
