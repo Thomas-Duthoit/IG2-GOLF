@@ -40,6 +40,8 @@ void renderLOBBY();
 void updateLOBBYClt(); 
 void renderLOBBYClt(); 
 
+bool connecterClt2App(char * ip, short port);
+
 
 requete_t req_send_clt2reg;
 pthread_cond_t end_reqrep_clt2reg = PTHREAD_COND_INITIALIZER;
@@ -321,13 +323,15 @@ void updateLIST(){
         // bouton host
         if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
 
-            req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
-            strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
-            snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:H", pseudo);
-                        
-            envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
+            if (connecterClt2App(IP_SERVICE, PORT_SRV_APP)) {
+                req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
+                strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
+                snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:H", pseudo);
+                            
+                envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
 
-            game_state = LOBBY_HOTE; 
+                game_state = LOBBY_HOTE; 
+            }
         }
 
         // bouton online
@@ -355,44 +359,13 @@ void updateLIST(){
             requete_t req;
 
             if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 110+(20*i), 20, 20})) {
-                printIHM("Creation du thread de comm \"dialClt2App\" ...\n");
-
-                pthread_t th_dialClt2App;
-                pthread_t th_multiRecvFromApp;
-
-                sa = connecterClt2Srv(hotes.tab[i].adrIP, hotes.tab[i].port_srv_app);
-
-                pthread_create(&th_dialClt2App, NULL, (pFctThread)dialClt2App, (void*)&sa);
-                pthread_detach(th_dialClt2App);
-
-                pthread_cond_wait(&start_thread_clt2app, &MUT_START_THREAD_CLT2APP); 
-
-                sam = connecterClt2Multi(IP_MULTICAST, hotes.tab[i].port_srv_app);
-
-                pthread_create(&th_multiRecvFromApp, NULL, (pFctThread)multiRecvFromApp, (void*)&sam);
-                pthread_detach(th_multiRecvFromApp);
                 
-                req_send_clt2app.idReq=JOIN_GAME; 
-                strcpy(req_send_clt2app.verbReq, "JOIN_GAME"); 
-                strcpy(req_send_clt2app.optReq, pseudo); 
-
-                printIHM("...Attente de l'ack\n"); 
-
-                connexion_serv_app_ok = true;  // le thread de dialogue le passera à false si la connexion échoue
-
-                envoi_avec_ack(start_reqrep_clt2app, end_reqrep_clt2app, MUT_END_REQREP_CLT2APP); 
-
-                if (connexion_serv_app_ok) {
-                    printIHM("... Connexion\n");
-                    
+                if (connecterClt2App(hotes.tab[i].adrIP, hotes.tab[i].port_srv_app)) {
+                            
                     strcpy(hote_serv_app.name, pseudo); 
 
                     game_state = LOBBY_CLIENT; 
-                } else {
-                    printIHM("ERREUR: connexion refusée\n");
-
                 }
-                
             }
         }
     }
@@ -605,4 +578,46 @@ void renderLOBBYClt(){
         DrawFPS(10, 450-20);
 
     EndDrawing();
+}
+
+
+
+bool connecterClt2App(char * ip, short port) {
+    printIHM("Creation du thread de comm \"dialClt2App\" ...\n");
+
+    pthread_t th_dialClt2App;
+    pthread_t th_multiRecvFromApp;
+
+    sa = connecterClt2Srv(ip, port);
+
+    pthread_create(&th_dialClt2App, NULL, (pFctThread)dialClt2App, (void*)&sa);
+    pthread_detach(th_dialClt2App);
+
+    pthread_cond_wait(&start_thread_clt2app, &MUT_START_THREAD_CLT2APP); 
+
+    sam = connecterClt2Multi(IP_MULTICAST, port);
+
+    pthread_create(&th_multiRecvFromApp, NULL, (pFctThread)multiRecvFromApp, (void*)&sam);
+    pthread_detach(th_multiRecvFromApp);
+
+    req_send_clt2app.idReq=JOIN_GAME; 
+    strcpy(req_send_clt2app.verbReq, "JOIN_GAME"); 
+    strcpy(req_send_clt2app.optReq, pseudo); 
+
+    printIHM("...Attente de l'ack\n"); 
+
+    connexion_serv_app_ok = true;  // le thread de dialogue le passera à false si la connexion échoue
+
+    envoi_avec_ack(start_reqrep_clt2app, end_reqrep_clt2app, MUT_END_REQREP_CLT2APP); 
+
+    if (connexion_serv_app_ok) {
+        printIHM("... Connexion\n");
+
+        return true;
+    } else {
+        printIHM("ERREUR: connexion refusée\n");
+        return false;
+    }  
+
+
 }
