@@ -832,12 +832,32 @@ void * multiRecvFromApp(socket_t * sam) {
 
 void switchRecvFromApp(requete_t * req) {
 
-    // TODO: IMPLEMENTER switchRecvFromApp
-    printMulticast("TODO: IMPLEMENTER switchRecvFromApp\n");
-
     switch (req->idReq)
     {
-            
+        case START_GAME:
+            printMulticast("START_GAME (TODO: implementer)\n");
+            break;
+
+        case SET_BALL_VEL:
+            printMulticast("SET_BALL_VEL (TODO: implementer)\n");
+            break;
+
+        case SET_BALL_POS:
+            printMulticast("SET_BALL_POS (TODO: implementer)\n");
+            break;
+
+        case NEXT_PLAYER_TO_PLAY:
+            printMulticast("NEXT_PLAYER_TO_PLAY (TODO: implementer)\n");
+            break;
+
+        case START_NEXT_ROUND:
+            printMulticast("START_NEXT_ROUND (TODO: implementer)\n");
+            break;
+
+        case END_GAME:
+            printMulticast("END_GAME (TODO: implementer)\n");
+            break;
+
         default:
             break;
     }
