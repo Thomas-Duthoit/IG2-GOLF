@@ -242,18 +242,6 @@ void * serv_applicatif(void * arg) {
         *sd_p = sd;
         pthread_create(&th, NULL, (pFctThread)dialApp2Clt, (void*)sd_p);
         pthread_detach(th);        
-
-        // TODO: test uniquement, supprimer après
-        sleep(1);
-
-        req_send_multi.idReq = START_GAME;
-        strcpy(req_send_multi.verbReq, "START_GAME");
-        strcpy(req_send_multi.optReq, "");
-
-        envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
-
-        // --------------------------------------
-
     }
 
     close(se.fd); // la socket d'écoute n'est jamais fermée
@@ -463,6 +451,14 @@ void updateLOBBY(){
 
         }
 
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){700, 430, 100, 20})) {
+            req_send_multi.idReq = START_GAME;
+            strcpy(req_send_multi.verbReq, "START_GAME");
+            strcpy(req_send_multi.optReq, "");
+
+            envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
+        }
+
     }
 
 } 
@@ -480,6 +476,10 @@ void renderLOBBY(){
         DrawRectangle(760, 30, 30, 30, GRAY);
         DrawText("X", 770, 35, 20, BLACK);
 
+        // bouton start
+        DrawRectangle(700, 430, 100, 20, GRAY);
+        DrawText("START", 720, 430, 20, BLACK);
+
 
         // récupération de la position de la souris
         int mouse_x = GetMouseX();
@@ -489,6 +489,11 @@ void renderLOBBY(){
         if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
             DrawRectangle(760, 30, 30, 30, RED);
             DrawText("X", 770, 35, 20, DARKGRAY);
+        }
+        // bouton start
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){700, 430, 100, 20})) {
+            DrawRectangle(700, 430, 100, 20, GREEN);
+            DrawText("START", 720, 430, 20, DARKGREEN);
         }
 
 
