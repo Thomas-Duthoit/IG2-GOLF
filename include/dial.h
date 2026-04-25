@@ -1,7 +1,7 @@
 #ifndef DIAL_H
 #define DIAL_H
 
-#define NB_JOUEURS_MAX 4
+#define NB_JOUEURS_MAX 2
 
 
 #ifdef DEBUG

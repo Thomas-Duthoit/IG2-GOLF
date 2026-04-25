@@ -49,6 +49,7 @@ typedef enum {
     NEXT_PLAYER_TO_PLAY,
     START_NEXT_ROUND,
     END_GAME,
+    END_SERV, 
 
     // Réponses Serveur d’enregistrement -> Clients
     OK_REG_SERV = 301,
@@ -58,7 +59,8 @@ typedef enum {
 
     // Réponses Serveur applicatif -> Clients
     OK_APP_SERV = 401, 
-    NOK_APP_SERV
+    NOK_APP_SERV, 
+    PLAYERS_LIST 
 
 } listeReqRep_t;
 

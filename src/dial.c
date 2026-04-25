@@ -36,10 +36,17 @@
     extern bool connexion_serv_reg_ok;
     extern bool connexion_serv_app_ok;
 
+    extern bool deconnexion_serv_app; 
+    extern char buff_pseudos_players[TAILLE_OPT];
 
-    //extern pthread_mutex_t MUT_CLT2APP;
-    //extern requete_t *req_send_clt2app;
-    //extern pthread_cond_t end_reqrep_clt2app;
+    extern bool multicast_actif; 
+
+    extern bool start_game; 
+    extern bool end_game; 
+    extern bool next_round; 
+
+    extern name_t pseudo_next_player; 
+    extern bool next_player; 
 #endif
 
 #ifdef SERVER
@@ -63,7 +70,20 @@ void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep);
 void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd);
 
 void traiterJOIN_GAME(requete_t * req, reponse_t * rep); 
+void traiterGET_PLAYERS_LIST(requete_t * req, reponse_t * rep); 
 void traiterLEAVE_GAME(requete_t * req, reponse_t * rep); 
+void traiterSHOOT(requete_t * req, reponse_t * rep); 
+
+void traiterSTART_GAME(requete_t * req); 
+void traiterSET_BALL_VEL(requete_t * req); 
+void traiterSET_BALL_POS(requete_t * req); 
+void traiterNEXT_PLAYER_TO_PLAY(requete_t * req); 
+void traiterSTART_NEXT_ROUND(requete_t * req); 
+void traiterEND_GAME(requete_t * req); 
+void traiterEND_SERV(requete_t * req); 
+
+
+
 
 //  --------------------------------------- SERVEUR D'ENREGISTREMENT | CLIENT -----------------------------
 
@@ -511,7 +531,7 @@ void switchApp2Clt(requete_t * req, reponse_t * rep){
             break; 
 
         case GET_PLAYERS_LIST : 
-            printApp2Clt("      Options : %s\n", rep->optRep);
+            traiterGET_PLAYERS_LIST(req, rep); 
             break; 
 
         case LEAVE_GAME : 
@@ -523,6 +543,7 @@ void switchApp2Clt(requete_t * req, reponse_t * rep){
 
         case SHOOT : 
             printApp2Clt("      Options : %s\n", rep->optRep);
+            traiterSHOOT(req, rep); 
             break; 
 
 
@@ -580,6 +601,43 @@ void traiterJOIN_GAME(requete_t * req, reponse_t * rep){
 
 
 
+void traiterGET_PLAYERS_LIST(requete_t * req, reponse_t * rep){
+    char * listClient = (char *)malloc(sizeof(char)*(MAX_NAME+1)*MAX_USERS);
+    char * username = (char *)malloc(sizeof(char)*(MAX_NAME+1)); 
+    int flag = 0; 
+    strcpy(listClient, ""); 
+
+    #ifdef CLIENT
+
+        // Copie des pseudos de tous les joueurs
+        for (int i = 0; i < clients_app.nbUsers; i++){
+            strcpy(username, clients_app.tab[i].name); 
+            strcat(username, ":"); 
+            strcat(listClient, username); 
+            flag = 1; 
+        }
+
+        if (flag){
+            listClient[strlen(listClient)-1] = '\0'; 
+        }
+
+        rep->idRep = PLAYERS_LIST; 
+        strcpy(rep->optRep, listClient); 
+        strcpy(rep->verbRep, "PLAYERS_LIST");
+
+    #endif
+
+    free(username); 
+    free(listClient); 
+
+
+}
+
+
+
+
+
+
 
 void traiterLEAVE_GAME(requete_t * req, reponse_t * rep){
     name_t username; 
@@ -626,6 +684,15 @@ void traiterLEAVE_GAME(requete_t * req, reponse_t * rep){
 
 
 }
+
+
+
+void traiterSHOOT(requete_t * req, reponse_t * rep){
+
+
+
+}
+
 
     #pragma endregion
 // -------------------------------------------------------------------------------------------------------
@@ -720,6 +787,17 @@ void switchClt2App(requete_t * req, reponse_t * rep){
             connexion_serv_app_ok = 0;
             #endif
             break;
+
+        case PLAYERS_LIST : 
+            printClt2App("Rep : OK_APP_SERV [%hu]\n", PLAYERS_LIST);
+            printClt2Reg("      Options : %s\n", rep->optRep);
+
+            #ifdef CLIENT
+            strcpy(buff_pseudos_players, rep->optRep);
+            #endif
+
+
+            break; 
 
         default:
             break;
@@ -834,27 +912,45 @@ void switchRecvFromApp(requete_t * req) {
     {
         case START_GAME:
             printMulticast("START_GAME (TODO: implementer)\n");
+
+            traiterSTART_GAME(req); 
+
             break;
 
         case SET_BALL_VEL:
             printMulticast("SET_BALL_VEL (TODO: implementer)\n");
+            traiterSET_BALL_VEL(req); 
             break;
 
         case SET_BALL_POS:
             printMulticast("SET_BALL_POS (TODO: implementer)\n");
+            traiterSET_BALL_POS(req); 
             break;
 
         case NEXT_PLAYER_TO_PLAY:
             printMulticast("NEXT_PLAYER_TO_PLAY (TODO: implementer)\n");
+            traiterNEXT_PLAYER_TO_PLAY(req); 
             break;
 
         case START_NEXT_ROUND:
             printMulticast("START_NEXT_ROUND (TODO: implementer)\n");
+            traiterSTART_NEXT_ROUND(req); 
             break;
 
         case END_GAME:
             printMulticast("END_GAME (TODO: implementer)\n");
+            
+            traiterEND_GAME(req); 
+
             break;
+
+        case END_SERV: 
+            printMulticast("END_SERV\n"); 
+            
+            traiterEND_SERV(req); 
+
+
+            break; 
 
         default:
             break;
@@ -868,3 +964,145 @@ void switchRecvFromApp(requete_t * req) {
 
 
 //  ------------------------------------------------------------------------------------------------------
+
+
+
+// ------------------------------ TRAITEMENT APP / CLT MULTICAST -----------------------------------------
+
+    #pragma region TRAITEMENT APP MULTICAST
+
+
+void traiterSTART_GAME(requete_t * req){
+
+    #ifdef CLIENT 
+
+        if(multicast_actif){
+
+            start_game = true; 
+
+        }
+        else{
+            printMulticast("START_GAME ignoré (session obsolète)\n"); 
+        }
+
+
+    #endif 
+
+}
+
+
+void traiterSET_BALL_VEL(requete_t * req){
+
+    #ifdef CLIENT
+
+        if(multicast_actif){
+
+            printMulticast("A traiter\n"); 
+
+        }else{
+
+            printMulticast("SET_BALL_VEL ignoré (session obsolète)\n"); 
+
+        }
+
+
+
+    #endif 
+
+}
+
+
+void traiterSET_BALL_POS(requete_t * req){
+    
+    #ifdef CLIENT
+
+        if(multicast_actif){
+
+            printMulticast("A traiter\n"); 
+
+        }else{
+
+            printMulticast("SET_BALL_POS ignoré (session obsolète)\n"); 
+
+        }
+
+
+
+    #endif 
+
+
+}
+
+
+void traiterNEXT_PLAYER_TO_PLAY(requete_t * req){
+    
+    #ifdef CLIENT 
+
+        if(multicast_actif){
+    
+            sscanf(req->optReq, "%s", pseudo_next_player); 
+            next_player = true; 
+            
+
+        }else{
+            printMulticast("NEXT_PLAYER_TO_PLAY ignoré (session obsolète)\n"); 
+        }
+
+
+    #endif 
+    
+}
+
+
+void traiterSTART_NEXT_ROUND(requete_t * req){
+
+    #ifdef CLIENT 
+
+        if(multicast_actif){
+
+            next_round = true; 
+
+        }else{
+
+            printMulticast("START_NEXT_ROUND ignoré (session obsolète)\n"); 
+
+        }
+
+
+    #endif 
+    
+}
+
+void traiterEND_GAME(requete_t * req){
+
+    #ifdef CLIENT
+        if(multicast_actif){
+            end_game = true; 
+        }
+        else{
+            printMulticast("END_SERV ignoré (session obsolète)\n"); 
+        }
+        
+
+    #endif 
+
+}
+
+void traiterEND_SERV(requete_t * req){
+
+    #ifdef CLIENT
+        if(multicast_actif){
+            deconnexion_serv_app = true; 
+        }
+        else{
+            printMulticast("END_SERV ignoré (session obsolète)\n"); 
+        }
+        
+
+    #endif
+
+}
+
+
+    #pragma endregion
+// -------------------------------------------------------------------------------------------------------
