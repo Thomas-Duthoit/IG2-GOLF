@@ -63,6 +63,10 @@ void load_map(map_t * map, char * path) {
     sscanf(line, "%f %f", &(map->hole_x), &(map->hole_z));
     printMap("Drapeau en %f;%f\n", map->hole_x, map->hole_z);
 
+    fgets(line, sizeof(line), f_map);
+    sscanf(line, "%f %f", &(map->start_x), &(map->start_z));
+    printMap("Départ en %f;%f\n", map->start_x, map->start_z);
+
     while (fgets(line, sizeof(line), f_map))
     {
         

@@ -6,17 +6,20 @@
 #include <stdbool.h>
 
 
+#define BALL_RADIUS 0.1
+
+
 // Partie physique du jeu 
 // Structure de la balle 
 
 typedef struct{
     // position
-    float x, y; //position au sol de la balle
-    float z; // position de la balle en hauteur
+    float x, z; //position au sol de la balle
+    float y; // position de la balle en hauteur
 
     // vélocité
-    float vx, vy; // vélocité sur le sol 
-    float vz; //vélocité en l'air
+    float vx, vz; // vélocité sur le sol 
+    float vy; //vélocité en l'air
 
     float ral; // ralentissement de la balle
 

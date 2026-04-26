@@ -20,6 +20,9 @@ typedef struct {
     float hole_x;
     float hole_z;
 
+    float start_x;
+    float start_z;
+
     Mesh mesh;
 
 } map_t;

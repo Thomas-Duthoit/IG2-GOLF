@@ -16,6 +16,7 @@
 #include "users.h"
 #include "map.h"
 #include "graphics.h"
+#include "physic.h"
 
 
 #define printIHM(fmt, ...) printf("\x1b[1;31mIHM (MAIN)\x1b[0m] " fmt, ##__VA_ARGS__)
@@ -125,6 +126,8 @@ users_t hotes;
 users_t clients_app; 
 users_t clients; 
 
+ball_t balls[MAX_USERS];
+
 user_t hote_serv_app;  
 
 socket_t sa_reg;
@@ -138,6 +141,7 @@ name_t pseudo;
 name_t pseudo_next_player; 
 
 map_t maps[MAX_MAPS];
+int current_map = 0;
 
 
 int main(int argc, char **argv) {
@@ -951,7 +955,7 @@ void renderGAME(){
 
         BeginMode3D(camera);
 
-            render_current_map(maps, 0);
+            render_current_map(maps, current_map);
 
         EndMode3D();
 
