@@ -947,7 +947,13 @@ void renderGAME(){
 
     BeginDrawing();
 
-        ClearBackground(RAYWHITE);
+        ClearBackground(SKYBLUE);
+
+        BeginMode3D(camera);
+
+            render_current_map(maps, 0);
+
+        EndMode3D();
 
         if (estHote()){
             // bouton quitter

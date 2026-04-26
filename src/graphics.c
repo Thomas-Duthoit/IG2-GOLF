@@ -71,3 +71,11 @@ void init_graphics(map_t *maps) {
     camera.fovy     = 60.0f;
     camera.projection = CAMERA_PERSPECTIVE;
 }
+
+
+void render_current_map(map_t *maps, int map_idx) {
+
+    SetShaderValue(shader, viewPosLoc, &camera.position, SHADER_UNIFORM_VEC3);  
+            
+    render_map(water_model, map_models[map_idx], map_border_models[map_idx], &maps[map_idx]);
+}
