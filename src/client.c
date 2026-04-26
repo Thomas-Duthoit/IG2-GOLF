@@ -14,6 +14,7 @@
 #include "reqRep.h"
 #include "dial.h"
 #include "users.h"
+#include "map.h"
 
 
 #define printIHM(fmt, ...) printf("\x1b[1;31mIHM (MAIN)\x1b[0m] " fmt, ##__VA_ARGS__)
@@ -21,6 +22,8 @@
 #define envoi_avec_ack(cond_debut, cond_fin, mut_fin) pthread_cond_signal(&(cond_debut)); pthread_cond_wait(&(cond_fin), &(mut_fin));
 #define envoi_no_ack(cond_debut) pthread_cond_signal(&(cond_debut));  // pas d'attente d'ACK, par exmeple pour le END_DIAL
 #define estHote() (strcmp(hote_serv_app.name, pseudo) == 0) && (strcmp(hote_serv_app.adrIP, IP_SERVICE) == 0) && (hote_serv_app.port_srv_app == PORT_SRV_APP)
+
+#define MAX_MAPS 1
 
 typedef enum {
     LIST = 1,
@@ -60,6 +63,8 @@ void * requetes_recurrentes_app_1s(void * arg);
 void resetLIST(); 
 
 void checkNbPlayers(); 
+
+void charger_maps();
 
 
 requete_t req_send_clt2reg;
@@ -132,6 +137,8 @@ game_state_t game_state;
 name_t pseudo;
 name_t pseudo_next_player; 
 
+map_t maps[MAX_MAPS];
+
 
 int main(int argc, char **argv) {
 
@@ -193,6 +200,9 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
+
+    // chargement de toutes les maps
+    charger_maps();
 
     
 
@@ -1047,4 +1057,20 @@ void renderNEXT(){
         DrawFPS(10, 450-20);
 
     EndDrawing();
+}
+
+
+
+
+
+
+
+void charger_maps() {
+
+    char buff[1000];
+
+    for (int i=0; i<MAX_MAPS; i++) {
+        snprintf(buff, 1000, "maps/map%d.txt", i);
+        load_map(&maps[0], buff);
+    }
 }
