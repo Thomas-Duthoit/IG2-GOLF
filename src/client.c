@@ -106,6 +106,8 @@ bool end_game = false;
 bool next_player = false; 
 bool next_round = false; 
 
+bool balls_initialized = false; 
+
 int current_player_index; 
 
 double startCountdownTime = 0;
@@ -207,7 +209,6 @@ int main(int argc, char **argv) {
 
     // chargement de toutes les maps
     charger_maps();
-
     
 
     // création de l'IHM avec raylib
@@ -228,18 +229,21 @@ int main(int argc, char **argv) {
             game_state = START;
             startCountdownTime = GetTime();
             start_game = false; 
+            balls_initialized = false; 
         }
         else if (end_game)
         {
             game_state = END; 
             end_game = false; 
             endScreenTime = GetTime();
+            balls_initialized = false; 
         }
         else if(next_round)
         {
             game_state = NEXT; 
             nextCountdownTime = GetTime();
             next_round = false; 
+            balls_initialized = false; 
         }
 
 
@@ -316,6 +320,7 @@ void * serv_applicatif(void * arg) {
     pthread_cond_signal(&cond_port_srv_app_alloue);  // adressage fini -> on signale au main
 
     socket_t sd;
+
 
     while(1) {
         
@@ -889,6 +894,27 @@ void renderSTART(){
 
 void updateGAME(){
 
+    ground_info_t ground_info; 
+
+    if (!balls_initialized){
+        // Positionnement initial des balles 
+        ground_info = get_ground_info(maps, maps->start_x, maps->start_z); 
+        if(estHote()){
+            for(int i = 0; i < clients_app.nbUsers; i++){
+                init_pos_ball(&(balls[i]), maps->start_x, maps->start_z, ground_info.y);
+            }
+        }
+        else{
+            for(int i = 0; i < clients.nbUsers; i++){
+                init_pos_ball(&(balls[i]), maps->start_x, maps->start_z, ground_info.y);
+            }
+        }
+
+        balls_initialized = true; 
+    }
+
+
+
     // partie IHM (clics, etc...)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
 
@@ -940,8 +966,6 @@ void updateGAME(){
             envoi_no_ack(start_req_multitoclts);
         }
 
-
-
     }
 
 }
@@ -957,7 +981,31 @@ void renderGAME(){
 
             render_current_map(maps, current_map);
 
+            if(estHote()){
+                for (int i = 0; i < clients_app.nbUsers; i++){
+                    render_ball(&(balls[i]), i); 
+                }
+            }
+            else{
+                for (int i = 0; i < clients.nbUsers; i++){
+                    render_ball(&(balls[i]), i); 
+                }
+            }
+
         EndMode3D();
+
+
+        if(estHote()){
+            for (int i = 0; i < clients_app.nbUsers; i++){
+                render_ball_name(&(balls[i]), clients_app.tab[i].name); 
+            }
+        }
+        else{
+            for (int i = 0; i < clients.nbUsers; i++){
+                render_ball_name(&(balls[i]), clients.tab[i].name); 
+            }
+        }
+
 
         if (estHote()){
             // bouton quitter

@@ -7,11 +7,14 @@ void upt_ball_pos_air(ball_t * ball);
 void upt_ball_vel_air(ball_t * ball); 
 
 
-void initBall(ball_t * ball, float startX, float startY, float startZ){
-    // Mise en place des positions initiales
+
+void init_pos_ball(ball_t * ball, float startX, float startZ, float startY){
+    // Mise en place des positions initiales à l'horizontal
     ball->x = startX; 
-    ball->y = startY; 
     ball->z = startZ; 
+
+    // position initial à la vertical
+    ball->y = startY; 
 
     // Mise en place de la vélocité de la balle initiale
     ball->vx = 0; 

@@ -37,11 +37,11 @@ libINET.a: session.o data.o
 	ar rcs lib/libINET/libINET.a build/session.o build/data.o
 
 
-bin/client: src/client.c libINET.a src/reqRep.c src/dial.c src/users.c src/map.c src/graphics.c
+bin/client: src/client.c libINET.a src/reqRep.c src/dial.c src/users.c src/physic.c src/map.c src/graphics.c
 	@echo "Compilation du client"
 	mkdir -p build
 	mkdir -p bin
-	gcc $(CCFLAGS) $(CFLAGS) src/client.c src/reqRep.c src/dial.c src/users.c src/map.c src/graphics.c $(LDFLAGS) -DCLIENT -o bin/client
+	gcc $(CCFLAGS) $(CFLAGS) src/client.c src/reqRep.c src/dial.c src/users.c src/physic.c src/map.c src/graphics.c $(LDFLAGS) -DCLIENT -o bin/client
 
 
 bin/server: src/server.c libINET.a src/reqRep.c src/dial.c src/users.c

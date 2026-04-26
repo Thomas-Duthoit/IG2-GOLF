@@ -1,9 +1,13 @@
+#ifndef PHYSIC_H
+#define PHYSIC_H
+
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <netdb.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
 
 
 #define BALL_RADIUS 0.1
@@ -28,12 +32,15 @@ typedef struct{
 
 } ball_t; 
 
+
 // prototype des fonctions
 
-void initBall(ball_t * ball, float startX, float startY, float startZ); // Initialisation de la balle et de sa position
+void init_pos_ball(ball_t * ball, float startX, float startZ, float startY); // Initialisation de la balle et de sa position
 void updateBallGround(ball_t * ball, float dt); // physique au sol
 void updateBallAir(ball_t * ball, float dt); // physique dans les airs; 
 void shoot(ball_t * ball); // tir de la ball
 // collisions
 void collisionWall(ball_t * ball); 
 void collisionRampe(ball_t * ball); 
+
+#endif // PHYSIC_H
