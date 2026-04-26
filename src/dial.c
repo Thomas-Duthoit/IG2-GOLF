@@ -911,42 +911,32 @@ void switchRecvFromApp(requete_t * req) {
     switch (req->idReq)
     {
         case START_GAME:
-            printMulticast("START_GAME (TODO: implementer)\n");
-
             traiterSTART_GAME(req); 
 
             break;
 
         case SET_BALL_VEL:
-            printMulticast("SET_BALL_VEL (TODO: implementer)\n");
             traiterSET_BALL_VEL(req); 
             break;
 
         case SET_BALL_POS:
-            printMulticast("SET_BALL_POS (TODO: implementer)\n");
             traiterSET_BALL_POS(req); 
             break;
 
         case NEXT_PLAYER_TO_PLAY:
-            printMulticast("NEXT_PLAYER_TO_PLAY (TODO: implementer)\n");
             traiterNEXT_PLAYER_TO_PLAY(req); 
             break;
 
         case START_NEXT_ROUND:
-            printMulticast("START_NEXT_ROUND (TODO: implementer)\n");
             traiterSTART_NEXT_ROUND(req); 
             break;
 
-        case END_GAME:
-            printMulticast("END_GAME (TODO: implementer)\n");
-            
+        case END_GAME:            
             traiterEND_GAME(req); 
 
             break;
 
-        case END_SERV: 
-            printMulticast("END_SERV\n"); 
-            
+        case END_SERV:             
             traiterEND_SERV(req); 
 
 
