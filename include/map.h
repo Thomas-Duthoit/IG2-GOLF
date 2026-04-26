@@ -7,6 +7,9 @@
 #define MAX_HEIGHTMAP_DIMENSION 50
 #define Y_SCALE 0.5
 
+#define MAX_MAPS 1
+
+
 typedef struct {
 
     int width;

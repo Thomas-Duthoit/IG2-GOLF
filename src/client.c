@@ -15,6 +15,7 @@
 #include "dial.h"
 #include "users.h"
 #include "map.h"
+#include "graphics.h"
 
 
 #define printIHM(fmt, ...) printf("\x1b[1;31mIHM (MAIN)\x1b[0m] " fmt, ##__VA_ARGS__)
@@ -23,7 +24,6 @@
 #define envoi_no_ack(cond_debut) pthread_cond_signal(&(cond_debut));  // pas d'attente d'ACK, par exmeple pour le END_DIAL
 #define estHote() (strcmp(hote_serv_app.name, pseudo) == 0) && (strcmp(hote_serv_app.adrIP, IP_SERVICE) == 0) && (hote_serv_app.port_srv_app == PORT_SRV_APP)
 
-#define MAX_MAPS 1
 
 typedef enum {
     LIST = 1,
@@ -209,6 +209,9 @@ int main(int argc, char **argv) {
     // création de l'IHM avec raylib
     SetTraceLogLevel(LOG_WARNING);  // on ne veut pas les messages d'info
     InitWindow(800, 450, TextFormat("IG2-GOLF - %s", pseudo));  // fenêtre 800 x 450 px
+
+    // initialisation des assets/shaders
+    init_graphics(maps);
 
     pthread_create(&th_req_rec, NULL, requetes_recurrentes_reg_1s, NULL);
     pthread_detach(th_req_rec);
