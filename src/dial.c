@@ -47,6 +47,8 @@
 
     extern name_t pseudo_next_player; 
     extern bool next_player; 
+
+    extern bool shoot; 
 #endif
 
 #ifdef SERVER
@@ -688,7 +690,12 @@ void traiterLEAVE_GAME(requete_t * req, reponse_t * rep){
 
 
 void traiterSHOOT(requete_t * req, reponse_t * rep){
+    #ifdef CLIENT
 
+
+        shoot = true; 
+
+    #endif 
 
 
 }

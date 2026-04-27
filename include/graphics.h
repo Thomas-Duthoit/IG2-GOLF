@@ -11,7 +11,6 @@ extern Camera3D camera;
 
 
 
-
 void init_graphics(map_t *maps);
 void render_current_map(map_t *maps, int map_idx);
 void render_ball(ball_t * ball, int player_index); 

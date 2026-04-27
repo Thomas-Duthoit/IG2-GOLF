@@ -75,7 +75,7 @@ void init_graphics(map_t *maps) {
 
 
     // Balle 
-    Mesh ball_mesh = GenMeshSphere(0.3f, 16, 16); 
+    Mesh ball_mesh = GenMeshSphere(1.0f, 16, 16); 
     ball_model = LoadModelFromMesh(ball_mesh); 
     ball_model.materials[0].shader = shader; 
 }
@@ -102,21 +102,21 @@ void render_ball(ball_t * ball, int player_index){
     Color color = BALL_COLORS[player_index % 6]; 
 
     Vector3 position = {
-        ball->x, 
-        ball->y + 0.3f, 
-        ball->z
+        ball->pos.x, 
+        ball->pos.y + BALL_RADIUS, 
+        ball->pos.z
     }; 
 
     ball_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].color = color; 
 
-    DrawModel(ball_model, position, 1.0f, WHITE); 
+    DrawModel(ball_model, position, BALL_RADIUS, WHITE); 
 
 
 }
 
 void render_ball_name(ball_t * ball, name_t player_name){
 
-    Vector3 text_pos_3d = {ball->x, ball->y + 0.8f, ball->z}; 
+    Vector3 text_pos_3d = {ball->pos.x, ball->pos.y + 0.2f + BALL_RADIUS, ball->pos.z}; 
 
     Vector2 text_pos_2d = GetWorldToScreen(text_pos_3d, camera); 
 

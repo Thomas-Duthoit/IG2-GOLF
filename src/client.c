@@ -106,6 +106,8 @@ bool end_game = false;
 bool next_player = false; 
 bool next_round = false; 
 
+bool shoot = false;  
+
 bool balls_initialized = false; 
 
 int current_player_index; 
@@ -230,6 +232,7 @@ int main(int argc, char **argv) {
             startCountdownTime = GetTime();
             start_game = false; 
             balls_initialized = false; 
+            //shoot = true;  // A retirer
         }
         else if (end_game)
         {
@@ -895,22 +898,26 @@ void renderSTART(){
 void updateGAME(){
 
     ground_info_t ground_info; 
+    int nb_joueurs = estHote() ? clients_app.nbUsers : clients.nbUsers; 
 
     if (!balls_initialized){
         // Positionnement initial des balles 
         ground_info = get_ground_info(maps, maps->start_x, maps->start_z); 
-        if(estHote()){
-            for(int i = 0; i < clients_app.nbUsers; i++){
-                init_pos_ball(&(balls[i]), maps->start_x, maps->start_z, ground_info.y);
-            }
-        }
-        else{
-            for(int i = 0; i < clients.nbUsers; i++){
-                init_pos_ball(&(balls[i]), maps->start_x, maps->start_z, ground_info.y);
-            }
+        for(int i = 0; i < nb_joueurs; i++){
+            init_pos_ball(&(balls[i]), maps->start_x, maps->start_z, ground_info.y);
         }
 
         balls_initialized = true; 
+    }
+
+    if(shoot){
+        for(int i = 0; i < nb_joueurs; i++){
+            double dt = GetFrameTime(); 
+            update_ball_mov(&(balls[i]), dt, maps); 
+
+            if(balls[i].vel.x == 0 && balls[i].vel.y == 0 && balls[i].vel.z == 0)
+                shoot = false; 
+        }
     }
 
 
@@ -994,17 +1001,19 @@ void renderGAME(){
 
         EndMode3D();
 
+        UpdateCamera(&camera, CAMERA_FREE); 
+
 
         if(estHote()){
             for (int i = 0; i < clients_app.nbUsers; i++){
-                render_ball_name(&(balls[i]), clients_app.tab[i].name); 
+                render_ball_name(&(balls[i]), clients_app.tab[i].name);
             }
         }
         else{
             for (int i = 0; i < clients.nbUsers; i++){
                 render_ball_name(&(balls[i]), clients.tab[i].name); 
             }
-        }
+        } 
 
 
         if (estHote()){
