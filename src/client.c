@@ -26,6 +26,12 @@
 #define estHote() (strcmp(hote_serv_app.name, pseudo) == 0) && (strcmp(hote_serv_app.adrIP, IP_SERVICE) == 0) && (hote_serv_app.port_srv_app == PORT_SRV_APP)
 
 
+#define MAX_PUISSANCE 13.0f
+
+#define APP_WIDTH 800
+#define APP_HEIGHT 450
+
+
 typedef enum {
     LIST = 1,
     LOBBY_HOTE, 
@@ -153,6 +159,9 @@ map_t maps[MAX_MAPS];
 int current_map = 0;
 
 cam_mode_t camera_mode = CAM_MODE_FREE;
+bool aiming = false;  // en train de viser pour tirer
+float shoot_puissance = 0.0f;
+Vector3 shoot_direction = { 0 };
 
 
 int main(int argc, char **argv) {
@@ -222,7 +231,7 @@ int main(int argc, char **argv) {
 
     // création de l'IHM avec raylib
     SetTraceLogLevel(LOG_WARNING);  // on ne veut pas les messages d'info
-    InitWindow(800, 450, TextFormat("IG2-GOLF - %s", pseudo));  // fenêtre 800 x 450 px
+    InitWindow(APP_WIDTH, APP_HEIGHT, TextFormat("IG2-GOLF - %s", pseudo));  // fenêtre 800 x 450 px
 
     // initialisation des assets/shaders
     init_graphics(maps);
@@ -918,37 +927,13 @@ void updateGAME(){
 
         balls_initialized = true; 
     }
-
-    // if(shoot){
-    //     for(int i = 0; i < nb_joueurs; i++){
-    //         double dt = GetFrameTime(); 
-    //         update_ball_mov(&(balls[i]), dt, maps); 
-
-    //         if(balls[i].vel.x == 0 && balls[i].vel.y == 0 && balls[i].vel.z == 0)
-    //             shoot = false; 
-    //     }
-    // }
-
-    // gestion camera : zqsd espace ctrl -> mode libre, r -> mode balle
-    if (IsKeyDown(KEY_W) || IsKeyDown(KEY_A) || IsKeyDown(KEY_S) || IsKeyDown(KEY_D) || 
-        IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_LEFT_CONTROL)) 
-    {
-        camera_mode = CAM_MODE_FREE;
+    
+    for(int i = 0; i < nb_joueurs; i++){
+        double dt = GetFrameTime(); 
+        update_ball_mov(&(balls[i]), dt, maps); 
     }
     
-    if (IsKeyPressed(KEY_R)) {
-        camera_mode = CAM_MODE_BALL;
-    }
-
-    if (camera_mode == CAM_MODE_FREE) {
-        UpdateCamera(&camera, CAMERA_FREE);
-    } 
-    else if (camera_mode == CAM_MODE_BALL && my_ball_index != -1) {
-        camera.target = balls[my_ball_index].pos;
-        UpdateCamera(&camera, CAMERA_THIRD_PERSON);
-    }
-
-
+    bool flag_bouton = false;  // on a appuyé sur un bouton de l'IHM -> pas de tir
 
     // partie IHM (clics, etc...)
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
@@ -974,6 +959,8 @@ void updateGAME(){
 
                 printIHM("Déconnexion...\n"); 
 
+                flag_bouton = true;  // on a appuyé sur un bouton de l'IHM -> pas de tir
+
             }
 
             
@@ -989,6 +976,8 @@ void updateGAME(){
                 strcpy(req_send_multi.optReq, clients_app.tab[current_player_index].name);
 
                 envoi_no_ack(start_req_multitoclts);
+
+                flag_bouton = true;  // on a appuyé sur un bouton de l'IHM -> pas de tir
             }
 
 
@@ -1000,10 +989,79 @@ void updateGAME(){
                 strcpy(req_send_multi.optReq, "");
 
                 envoi_no_ack(start_req_multitoclts);
+
+                flag_bouton = true;  // on a appuyé sur un bouton de l'IHM -> pas de tir
             }
 
         }
 
+        if (aiming) {
+            flag_bouton = false;  // on était déja en train de tirer -> on reste en tir
+        }
+
+        if (!flag_bouton && camera_mode == CAM_MODE_BALL) {  // on a pas appuyé sur un bouton de l'IHM + vue balle -> ON TIRE
+            aiming = true;  // passage en mode tir
+        }
+
+    }
+
+
+    if (aiming) {
+            Vector2 current_mouse_pos = GetMousePosition();
+            
+            float dx = -(current_mouse_pos.x - (APP_WIDTH/2));
+            float dy = current_mouse_pos.y - (APP_WIDTH/2);
+
+            shoot_puissance = Vector2Length((Vector2){dx, dy}) * 0.1f; 
+            if (shoot_puissance > MAX_PUISSANCE) {
+                shoot_puissance = MAX_PUISSANCE;
+            }
+
+            
+            Vector3 cam_forward = Vector3Subtract(camera.target, camera.position);
+            cam_forward.y = 0; // pas de hauteur, plan horizontal seulement
+            cam_forward = Vector3Normalize(cam_forward);
+            
+            
+            // on ajoute l'écart du drag à la direction de la caméra pour tirer sur les côtés
+            Vector3 cam_right = { -cam_forward.z, 0, cam_forward.x };
+            
+            shoot_direction = Vector3Add(
+                Vector3Scale(cam_forward, dy * 0.01f), 
+                Vector3Scale(cam_right, dx * 0.01f)
+            );
+            shoot_direction = Vector3Normalize(shoot_direction);
+
+            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+                aiming = false;
+                
+                // TODO: passer en réseau après les tests
+                balls[my_ball_index].vel = Vector3Scale(shoot_direction, shoot_puissance);
+                balls[my_ball_index].inMovement = true;
+                
+            }
+        }
+
+
+    if (!aiming) {  // camera bloquée en tir
+        // gestion camera : zqsd espace ctrl -> mode libre, r -> mode balle
+        if (IsKeyDown(KEY_W) || IsKeyDown(KEY_A) || IsKeyDown(KEY_S) || IsKeyDown(KEY_D) || 
+            IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_LEFT_CONTROL)) 
+        {
+            camera_mode = CAM_MODE_FREE;
+        }
+        
+        if (IsKeyPressed(KEY_R)) {
+            camera_mode = CAM_MODE_BALL;
+        }
+
+        if (camera_mode == CAM_MODE_FREE) {
+            UpdateCamera(&camera, CAMERA_FREE);
+        } 
+        else if (camera_mode == CAM_MODE_BALL && my_ball_index != -1) {
+            camera.target = balls[my_ball_index].pos;
+            UpdateCamera(&camera, CAMERA_THIRD_PERSON);
+        }
     }
 
 }
@@ -1028,6 +1086,14 @@ void renderGAME(){
                 for (int i = 0; i < clients.nbUsers; i++){
                     render_ball(&(balls[i]), i); 
                 }
+            }
+
+            if (aiming && my_ball_index != -1) {
+                Vector3 start = balls[my_ball_index].pos;
+                Vector3 end = Vector3Add(start, Vector3Scale(shoot_direction, shoot_puissance * 0.5f));
+                
+                DrawLine3D(start, end, RED);
+                DrawSphere(end, 0.1f, RED);
             }
 
         EndMode3D();
