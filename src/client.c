@@ -37,6 +37,11 @@ typedef enum {
 
 } game_state_t; 
 
+typedef enum {
+    CAM_MODE_FREE,
+    CAM_MODE_BALL,
+} cam_mode_t;
+
 
 void * serv_applicatif(void * arg);
 void * requetes_recurrentes_reg_1s(void * arg);
@@ -928,49 +933,52 @@ void updateGAME(){
         // récupération de la position de la souris
         int mouse_x = GetMouseX();
         int mouse_y = GetMouseY();
-        
-        // bouton fin de partie
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
-            // Déconnexion du serveur applicatif
-            printIHM("Fin de la partie ...\n"); 
 
-            req_send_multi.idReq = END_GAME;
-            strcpy(req_send_multi.verbReq, "END_GAME");
-            strcpy(req_send_multi.optReq, "");
+        if (estHote()) {        
+            // bouton fin de partie
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
+                // Déconnexion du serveur applicatif
+                printIHM("Fin de la partie ...\n"); 
 
-            envoi_no_ack(start_req_multitoclts);
-            end_game = true;
-             
-            game_state = END; 
+                req_send_multi.idReq = END_GAME;
+                strcpy(req_send_multi.verbReq, "END_GAME");
+                strcpy(req_send_multi.optReq, "");
 
-            printIHM("Déconnexion...\n"); 
+                envoi_no_ack(start_req_multitoclts);
+                end_game = true;
+                
+                game_state = END; 
 
-        }
+                printIHM("Déconnexion...\n"); 
 
-        
-        // bouton next player
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){20, 20, 20, 20})) {
-            if (clients_app.nbUsers == 0) return;
+            }
 
-            // Rotation circulaire
-            current_player_index = (current_player_index + 1) % clients_app.nbUsers;
+            
+            // bouton next player
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){20, 20, 20, 20})) {
+                if (clients_app.nbUsers == 0) return;
 
-            req_send_multi.idReq = NEXT_PLAYER_TO_PLAY;
-            strcpy(req_send_multi.verbReq, "NEXT_PLAYER_TO_PLAY");
-            strcpy(req_send_multi.optReq, clients_app.tab[current_player_index].name);
+                // Rotation circulaire
+                current_player_index = (current_player_index + 1) % clients_app.nbUsers;
 
-            envoi_no_ack(start_req_multitoclts);
-        }
+                req_send_multi.idReq = NEXT_PLAYER_TO_PLAY;
+                strcpy(req_send_multi.verbReq, "NEXT_PLAYER_TO_PLAY");
+                strcpy(req_send_multi.optReq, clients_app.tab[current_player_index].name);
+
+                envoi_no_ack(start_req_multitoclts);
+            }
 
 
-        // bouton next round 
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){20, 60, 20, 20})) {
+            // bouton next round 
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){20, 60, 20, 20})) {
 
-            req_send_multi.idReq = START_NEXT_ROUND;
-            strcpy(req_send_multi.verbReq, "START_NEXT_ROUND");
-            strcpy(req_send_multi.optReq, "");
+                req_send_multi.idReq = START_NEXT_ROUND;
+                strcpy(req_send_multi.verbReq, "START_NEXT_ROUND");
+                strcpy(req_send_multi.optReq, "");
 
-            envoi_no_ack(start_req_multitoclts);
+                envoi_no_ack(start_req_multitoclts);
+            }
+
         }
 
     }
