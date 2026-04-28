@@ -48,7 +48,7 @@
     extern name_t pseudo_next_player; 
     extern bool next_player; 
 
-    extern bool shoot; 
+    //extern bool shoot; 
 #endif
 
 #ifdef SERVER
@@ -693,7 +693,7 @@ void traiterSHOOT(requete_t * req, reponse_t * rep){
     #ifdef CLIENT
 
 
-        shoot = true; 
+        //shoot = true; 
 
     #endif 
 

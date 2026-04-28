@@ -71,6 +71,7 @@ void resetLIST();
 void checkNbPlayers(); 
 
 void charger_maps();
+int idx_my_ball();
 
 
 requete_t req_send_clt2reg;
@@ -111,8 +112,6 @@ bool end_game = false;
 bool next_player = false; 
 bool next_round = false; 
 
-bool shoot = false;  
-
 bool balls_initialized = false; 
 
 int current_player_index; 
@@ -136,6 +135,7 @@ users_t clients_app;
 users_t clients; 
 
 ball_t balls[MAX_USERS];
+int my_ball_index = -1;  // -1 = pas trouvé, sinon index
 
 user_t hote_serv_app;  
 
@@ -151,6 +151,8 @@ name_t pseudo_next_player;
 
 map_t maps[MAX_MAPS];
 int current_map = 0;
+
+cam_mode_t camera_mode = CAM_MODE_FREE;
 
 
 int main(int argc, char **argv) {
@@ -902,6 +904,8 @@ void renderSTART(){
 
 void updateGAME(){
 
+    if (my_ball_index == -1) my_ball_index = idx_my_ball();
+
     ground_info_t ground_info; 
     int nb_joueurs = estHote() ? clients_app.nbUsers : clients.nbUsers; 
 
@@ -915,14 +919,33 @@ void updateGAME(){
         balls_initialized = true; 
     }
 
-    if(shoot){
-        for(int i = 0; i < nb_joueurs; i++){
-            double dt = GetFrameTime(); 
-            update_ball_mov(&(balls[i]), dt, maps); 
+    // if(shoot){
+    //     for(int i = 0; i < nb_joueurs; i++){
+    //         double dt = GetFrameTime(); 
+    //         update_ball_mov(&(balls[i]), dt, maps); 
 
-            if(balls[i].vel.x == 0 && balls[i].vel.y == 0 && balls[i].vel.z == 0)
-                shoot = false; 
-        }
+    //         if(balls[i].vel.x == 0 && balls[i].vel.y == 0 && balls[i].vel.z == 0)
+    //             shoot = false; 
+    //     }
+    // }
+
+    // gestion camera : zqsd espace ctrl -> mode libre, r -> mode balle
+    if (IsKeyDown(KEY_W) || IsKeyDown(KEY_A) || IsKeyDown(KEY_S) || IsKeyDown(KEY_D) || 
+        IsKeyDown(KEY_SPACE) || IsKeyDown(KEY_LEFT_CONTROL)) 
+    {
+        camera_mode = CAM_MODE_FREE;
+    }
+    
+    if (IsKeyPressed(KEY_R)) {
+        camera_mode = CAM_MODE_BALL;
+    }
+
+    if (camera_mode == CAM_MODE_FREE) {
+        UpdateCamera(&camera, CAMERA_FREE);
+    } 
+    else if (camera_mode == CAM_MODE_BALL && my_ball_index != -1) {
+        camera.target = balls[my_ball_index].pos;
+        UpdateCamera(&camera, CAMERA_THIRD_PERSON);
     }
 
 
@@ -1009,7 +1032,7 @@ void renderGAME(){
 
         EndMode3D();
 
-        UpdateCamera(&camera, CAMERA_FREE); 
+        //UpdateCamera(&camera, CAMERA_FREE); 
 
 
         if(estHote()){
@@ -1151,4 +1174,22 @@ void charger_maps() {
         snprintf(buff, 1000, "maps/map%d.txt", i);
         load_map(&maps[0], buff);
     }
+}
+
+
+
+
+
+
+int idx_my_ball() {
+    if (estHote()) {
+        for (int i = 0; i < clients_app.nbUsers; i++) {
+            if (strcmp(clients_app.tab[i].name, pseudo) == 0) return i;
+        }
+    } else {
+        for (int i = 0; i < clients.nbUsers; i++) {
+            if (strcmp(clients.tab[i].name, pseudo) == 0) return i;
+        }
+    }
+    return -1;
 }
