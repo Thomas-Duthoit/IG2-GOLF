@@ -1011,7 +1011,7 @@ void updateGAME(){
             Vector2 current_mouse_pos = GetMousePosition();
             
             float dx = -(current_mouse_pos.x - (APP_WIDTH/2));
-            float dy = current_mouse_pos.y - (APP_WIDTH/2);
+            float dy = current_mouse_pos.y - (APP_HEIGHT/2);
 
             shoot_puissance = Vector2Length((Vector2){dx, dy}) * 0.1f; 
             if (shoot_puissance > MAX_PUISSANCE) {
