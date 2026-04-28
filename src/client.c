@@ -163,6 +163,7 @@ cam_mode_t camera_mode = CAM_MODE_FREE;
 bool aiming = false;  // en train de viser pour tirer
 float shoot_puissance = 0.0f;
 Vector3 shoot_direction = { 0 };
+Vector2 mouse_delta = { 0 };
 
 
 int main(int argc, char **argv) {
@@ -192,6 +193,7 @@ int main(int argc, char **argv) {
     pseudo[strlen(pseudo)-1] = '\0';
 
     game_state = LIST; 
+
 
 
     pthread_t th_clt2reg;
@@ -246,6 +248,7 @@ int main(int argc, char **argv) {
         if(start_game)
         {
             game_state = START;
+            EnableCursor();
             startCountdownTime = GetTime();
             start_game = false; 
             balls_initialized = false; 
@@ -254,6 +257,7 @@ int main(int argc, char **argv) {
         else if (end_game)
         {
             game_state = END; 
+            EnableCursor();
             end_game = false; 
             endScreenTime = GetTime();
             balls_initialized = false; 
@@ -261,6 +265,7 @@ int main(int argc, char **argv) {
         else if(next_round)
         {
             game_state = NEXT; 
+            EnableCursor();
             nextCountdownTime = GetTime();
             next_round = false; 
             balls_initialized = false; 
@@ -436,6 +441,7 @@ void updateLIST(){
                 hote_serv_app.etat = 'H'; 
 
                 game_state = LOBBY_HOTE; 
+                EnableCursor();
             }
         }
 
@@ -473,6 +479,7 @@ void updateLIST(){
                     hote_serv_app.port_srv_app = hotes.tab[i].port_srv_app; 
 
                     game_state = LOBBY_CLIENT; 
+                    EnableCursor();
                 }
             }
         }
@@ -614,6 +621,7 @@ void updateLOBBY(){
             multicast_actif = false; 
             resetLIST(); 
             game_state = LIST; 
+            EnableCursor();
 
         }
 
@@ -711,6 +719,7 @@ void updateLOBBYClt(){
 
         resetLIST(); 
         game_state = LIST; 
+        EnableCursor();
         deconnexion_serv_app = false; 
         connexion_serv_app_ok = false; 
 
@@ -738,6 +747,7 @@ void updateLOBBYClt(){
             multicast_actif = false; 
             resetLIST(); 
             game_state = LIST; 
+            EnableCursor();
 
             printIHM("Déconnexion...\n"); 
 
@@ -902,6 +912,7 @@ void renderSTART(){
         }
         else {
             game_state = GAME;
+            DisableCursor();
             startCountdownTime = 0; 
         }
 
@@ -957,6 +968,7 @@ void updateGAME(){
                 end_game = true;
                 
                 game_state = END; 
+                EnableCursor();
 
                 printIHM("Déconnexion...\n"); 
 
@@ -1008,39 +1020,40 @@ void updateGAME(){
 
 
     if (aiming) {
-            Vector2 current_mouse_pos = GetMousePosition();
-            
-            float dx = -(current_mouse_pos.x - (APP_WIDTH/2));
-            float dy = current_mouse_pos.y - (APP_HEIGHT/2);
+        Vector2 current_delta = GetMouseDelta();
+        
+        mouse_delta.x += current_delta.x;
+        mouse_delta.y += current_delta.y;
 
-            shoot_puissance = Vector2Length((Vector2){dx, dy}) * 0.1f; 
-            if (shoot_puissance > MAX_PUISSANCE) {
-                shoot_puissance = MAX_PUISSANCE;
-            }
-
-            
-            Vector3 cam_forward = Vector3Subtract(camera.target, camera.position);
-            cam_forward.y = 0; // pas de hauteur, plan horizontal seulement
-            cam_forward = Vector3Normalize(cam_forward);
-            
-            
-            // on ajoute l'écart du drag à la direction de la caméra pour tirer sur les côtés
-            Vector3 cam_right = { -cam_forward.z, 0, cam_forward.x };
-            
-            shoot_direction = Vector3Add(
-                Vector3Scale(cam_forward, dy * 0.01f), 
-                Vector3Scale(cam_right, dx * 0.01f)
-            );
-            shoot_direction = Vector3Normalize(shoot_direction);
-
-            if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
-                aiming = false;
-                
-                shoot(shoot_direction, shoot_puissance);
-                
-            }
+        shoot_puissance = Vector2Length((Vector2){mouse_delta.x, mouse_delta.y}) * 0.1f; 
+        if (shoot_puissance > MAX_PUISSANCE) {
+            shoot_puissance = MAX_PUISSANCE;
         }
 
+        
+        Vector3 cam_forward = Vector3Subtract(camera.target, camera.position);
+        cam_forward.y = 0; // pas de hauteur, plan horizontal seulement
+        cam_forward = Vector3Normalize(cam_forward);
+        
+        
+        // on ajoute l'écart du drag à la direction de la caméra pour tirer sur les côtés
+        Vector3 cam_right = { -cam_forward.z, 0, cam_forward.x };
+        
+        shoot_direction = Vector3Add(
+            Vector3Scale(cam_forward, mouse_delta.y * 0.01f), 
+            Vector3Scale(cam_right, mouse_delta.x * 0.01f)
+        );
+        shoot_direction = Vector3Normalize(shoot_direction);
+
+        if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
+            aiming = false;
+            mouse_delta = (Vector2){0, 0};
+            shoot(shoot_direction, shoot_puissance);
+            
+        }
+    }
+
+    cam_mode_t old_mode = camera_mode;
 
     if (!aiming) {  // camera bloquée en tir
         // gestion camera : zqsd espace ctrl -> mode libre, r -> mode balle
@@ -1053,6 +1066,21 @@ void updateGAME(){
         if (IsKeyPressed(KEY_R)) {
             camera_mode = CAM_MODE_BALL;
         }
+
+        if (camera_mode == CAM_MODE_FREE) {
+            if (IsKeyDown(KEY_LEFT_SHIFT)) {
+                EnableCursor();  // shift : curseur
+            if (IsKeyReleased(KEY_LEFT_SHIFT)) {
+                DisableCursor();
+            }
+            } else {
+                if (old_mode != camera_mode) {
+                    DisableCursor(); // pas shift : pas curseur
+                }
+            }
+        }
+
+        old_mode = camera_mode;
 
         if (camera_mode == CAM_MODE_FREE) {
             UpdateCamera(&camera, CAMERA_FREE);
@@ -1174,10 +1202,13 @@ void updateEND(){
             checkNbPlayers(); 
 
             game_state = LOBBY_HOTE;
+            EnableCursor();
 
         }
         else{
             game_state = LOBBY_CLIENT;
+            EnableCursor();
+
         }
  
     }
@@ -1217,6 +1248,7 @@ void renderNEXT(){
         }
         else {
             game_state = GAME;
+            DisableCursor();
             nextCountdownTime = 0; 
         }
 
