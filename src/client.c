@@ -78,6 +78,7 @@ void checkNbPlayers();
 
 void charger_maps();
 int idx_my_ball();
+void shoot(Vector3 dir, float power);
 
 
 requete_t req_send_clt2reg;
@@ -1035,9 +1036,7 @@ void updateGAME(){
             if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
                 aiming = false;
                 
-                // TODO: passer en réseau après les tests
-                balls[my_ball_index].vel = Vector3Scale(shoot_direction, shoot_puissance);
-                balls[my_ball_index].inMovement = true;
+                shoot(shoot_direction, shoot_puissance);
                 
             }
         }
@@ -1258,4 +1257,21 @@ int idx_my_ball() {
         }
     }
     return -1;
+}
+
+
+
+
+void shoot(Vector3 dir, float power) {
+    if (!connexion_serv_app_ok) return;
+
+    req_send_clt2app.idReq = SHOOT;
+    strcpy(req_send_clt2app.verbReq, "SHOOT");
+    
+    snprintf(req_send_clt2app.optReq, TAILLE_OPT, "%s:%f:%f:%f:%f", 
+             pseudo, dir.x, dir.y, dir.z, power);
+
+    printIHM("Envoi du tir : %s\n", req_send_clt2app.optReq);
+
+    envoi_avec_ack(start_reqrep_clt2app, end_reqrep_clt2app, MUT_END_REQREP_CLT2APP);
 }

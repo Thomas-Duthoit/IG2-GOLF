@@ -6,7 +6,7 @@
 #include "data.h"
 #include "dial.h"
 #include "reqRep.h"
-
+#include "physic.h"
 
 
 #ifdef CLIENT
@@ -48,6 +48,11 @@
     extern name_t pseudo_next_player; 
     extern bool next_player; 
 
+    extern ball_t balls[MAX_USERS];
+    extern users_t clients;
+
+    extern name_t pseudo;
+    extern user_t hote_serv_app;  
     //extern bool shoot; 
 #endif
 
@@ -55,6 +60,9 @@
     extern pthread_mutex_t MUT_USER_MANAGEMENT; 
 #endif
 
+#ifdef CLIENT
+    #define estHote() (strcmp(hote_serv_app.name, pseudo) == 0)
+#endif
 
 
 //TODO: Changer le prototype des fonct reponse_t * rep, socket_t * sd);
@@ -692,8 +700,40 @@ void traiterLEAVE_GAME(requete_t * req, reponse_t * rep){
 void traiterSHOOT(requete_t * req, reponse_t * rep){
     #ifdef CLIENT
 
+        name_t name;
+        float dx, dy, dz, p;
 
-        //shoot = true; 
+        
+        sscanf(req->optReq, "%[^:]:%f:%f:%f:%f", name, &dx, &dy, &dz, &p);
+
+        printApp2Clt("Tir reçu de %s (Power: %f)\n", name, p);
+
+        // index joueur
+        int index = -1;
+        for (int i = 0; i < clients_app.nbUsers; i++) {
+            if (strcmp(clients_app.tab[i].name, name) == 0) {
+                index = i;
+                break;
+            }
+        }
+
+        // modif balle
+        if (index != -1) {
+            balls[index].vel.x = dx * p;
+            balls[index].vel.y = dy * p;
+            balls[index].vel.z = dz * p;
+            balls[index].inMovement = true;
+
+            rep->idRep = OK_APP_SERV;
+            strcpy(rep->verbRep, "OK_APP_SERV");
+            
+            
+            req_send_multi.idReq = SET_BALL_VEL;
+            sprintf(req_send_multi.optReq, "%s:%f:%f:%f", name, balls[index].vel.x, balls[index].vel.y, balls[index].vel.z);
+
+            pthread_cond_signal(&start_req_multitoclts);  // envoi no ack car en mode DGRAM
+            
+        }
 
     #endif 
 
@@ -994,7 +1034,40 @@ void traiterSET_BALL_VEL(requete_t * req){
 
         if(multicast_actif){
 
-            printMulticast("A traiter\n"); 
+            name_t name;
+            float vx, vy, vz;
+
+            
+            sscanf(req->optReq, "%[^:]:%f:%f:%f", name, &vx, &vy, &vz);
+
+            printMulticast("Nouvelle vel pour %s\n", name);
+
+            // index joueur
+            users_t *u_list;
+            if (estHote()) {
+                u_list = &clients_app;
+            } else {
+                u_list = &clients;
+            }
+            int nb_utilisateurs = u_list->nbUsers;
+
+            // Trouver l'index dans la BONNE liste
+            int index = -1;
+            for (int i = 0; i < nb_utilisateurs; i++) {
+                if (strcmp(u_list->tab[i].name, name) == 0) {
+                    index = i;
+                    break;
+                }
+            }
+
+            // modif balle
+            if (index != -1) {
+                balls[index].vel.x = vx;
+                balls[index].vel.y = vy;
+                balls[index].vel.z = vz;
+                balls[index].inMovement = true;
+            }
+
 
         }else{
 
