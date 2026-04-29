@@ -43,16 +43,30 @@ void update_ball_mov(ball_t * ball, double dt, map_t * map){
     ball->vel.y = ball->vel.y - (G * dt);     // Calcul de la gravité de la balle
 
     pos_th = Vector3Add(ball->pos, Vector3Scale(ball->vel, dt)); 
-    
-    ground_info = get_ground_info(map, ball->pos.x, ball->pos.z); 
 
-    updateValue(ground_info, &(pos_th), ball, dt); 
+    if (
+        ball->pos.x >= 0 
+        && ball->pos.y >= 0
+        && ball->pos.x <= map->width
+        && ball->pos.y <= map->height
+    ) {
+        ground_info = get_ground_info(map, ball->pos.x, ball->pos.z); 
+
+        updateValue(ground_info, &(pos_th), ball, dt); 
+    }
 
     ball->pos.x = pos_th.x; 
     ball->pos.y = pos_th.y; 
     ball->pos.z = pos_th.z; 
 
     checkArret(ground_info, ball);    
+
+    float waterHeight = -2.0f;
+    if (ball->pos.y < (waterHeight-3.0)) {
+        ground_info_t start_ground_info = get_ground_info(map, map->start_x, map->start_z);
+        ball->vel = (Vector3) {0.0, 0.0, 0.0};
+        init_pos_ball(ball, map->start_x, map->start_z, start_ground_info.y);
+    }
 }
 
 
