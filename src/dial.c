@@ -53,7 +53,9 @@
 
     extern name_t pseudo;
     extern user_t hote_serv_app;  
-    //extern bool shoot; 
+
+    extern bool can_shoot;  // on peut tirer ou non
+    
 #endif
 
 #ifdef SERVER
@@ -1112,6 +1114,9 @@ void traiterNEXT_PLAYER_TO_PLAY(requete_t * req){
     
             sscanf(req->optReq, "%s", pseudo_next_player); 
             next_player = true; 
+            if (!strcmp(pseudo, pseudo_next_player)) {
+                can_shoot = true;
+            }
             
 
         }else{

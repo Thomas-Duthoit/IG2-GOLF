@@ -165,6 +165,8 @@ float shoot_puissance = 0.0f;
 Vector3 shoot_direction = { 0 };
 Vector2 mouse_delta = { 0 };
 
+bool can_shoot;  // on peut tirer ou non
+
 
 int main(int argc, char **argv) {
 
@@ -1012,7 +1014,7 @@ void updateGAME(){
             flag_bouton = false;  // on était déja en train de tirer -> on reste en tir
         }
 
-        if (!flag_bouton && camera_mode == CAM_MODE_BALL) {  // on a pas appuyé sur un bouton de l'IHM + vue balle -> ON TIRE
+        if (!flag_bouton && camera_mode == CAM_MODE_BALL && can_shoot) {  // on a pas appuyé sur un bouton de l'IHM + vue balle -> ON TIRE
             aiming = true;  // passage en mode tir
         }
 
@@ -1049,6 +1051,8 @@ void updateGAME(){
             aiming = false;
             mouse_delta = (Vector2){0, 0};
             shoot(shoot_direction, shoot_puissance);
+
+            can_shoot = false;
             
         }
     }
@@ -1174,16 +1178,15 @@ void renderGAME(){
             }
         }
 
-        DrawText("La partie vient de commencer !!", 220, 150, 30, BLACK);
+        //DrawText("La partie vient de commencer !!", 220, 150, 30, BLACK);
 
         if(next_player == true){
             if(strcmp(pseudo, pseudo_next_player) == 0){
-                DrawText(TextFormat("C'est mon tour de jouer !"), 300, 10, 30, BLACK); 
+                DrawText(TextFormat("C'est mon tour de jouer !"), 300, 10, 20, BLACK); 
             }
             else{
-                DrawText(TextFormat("Joueur qui doit jouer : %s", pseudo_next_player), 300, 10, 30, BLACK); 
+                DrawText(TextFormat("Joueur qui doit jouer : %s", pseudo_next_player), 300, 10, 20, BLACK); 
             }
-
         }
 
 
