@@ -55,6 +55,8 @@
     extern user_t hote_serv_app;  
 
     extern bool can_shoot;  // on peut tirer ou non
+
+    extern bool set_ball_pos_envoye;
     
 #endif
 
@@ -719,6 +721,8 @@ void traiterSHOOT(requete_t * req, reponse_t * rep){
             }
         }
 
+        set_ball_pos_envoye = false;
+
         // modif balle
         if (index != -1) {
             balls[index].vel.x = dx * p;
@@ -1090,7 +1094,42 @@ void traiterSET_BALL_POS(requete_t * req){
 
         if(multicast_actif){
 
-            printMulticast("A traiter\n"); 
+            name_t name;
+            float x, y, z;
+            bool inHole;
+
+            
+            sscanf(req->optReq, "%[^:]:%f:%f:%f:%d", name, &x, &y, &z, (int*)&inHole);
+
+            printMulticast("Nouvelle pos pour %s\n", name);
+
+            // index joueur
+            users_t *u_list;
+            if (estHote()) {
+                u_list = &clients_app;
+            } else {
+                u_list = &clients;
+            }
+            int nb_utilisateurs = u_list->nbUsers;
+
+            // Trouver l'index dans la BONNE liste
+            int index = -1;
+            for (int i = 0; i < nb_utilisateurs; i++) {
+                if (strcmp(u_list->tab[i].name, name) == 0) {
+                    index = i;
+                    break;
+                }
+            }
+
+            // modif balle
+            if (index != -1) {
+                balls[index].pos.x = x;
+                balls[index].pos.y = y;
+                balls[index].pos.z = z;
+                balls[index].inMovement = false;
+                balls[index].inHole = inHole;
+            }
+
 
         }else{
 

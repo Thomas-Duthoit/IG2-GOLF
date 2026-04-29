@@ -168,6 +168,10 @@ Vector2 mouse_delta = { 0 };
 bool can_shoot;  // on peut tirer ou non
 
 
+bool set_ball_pos_envoye = false;
+
+
+
 int main(int argc, char **argv) {
 
     if (argc < 4) {
@@ -933,6 +937,14 @@ void updateGAME(){
     int nb_joueurs = estHote() ? clients_app.nbUsers : clients.nbUsers; 
 
     if (!balls_initialized){
+        if (estHote()) {
+            current_player_index = 0;
+            req_send_multi.idReq = NEXT_PLAYER_TO_PLAY;
+            strcpy(req_send_multi.verbReq, "NEXT_PLAYER_TO_PLAY");
+            strcpy(req_send_multi.optReq, clients_app.tab[current_player_index].name);
+
+            envoi_no_ack(start_req_multitoclts);
+        }
         // Positionnement initial des balles 
         ground_info = get_ground_info(maps, maps->start_x, maps->start_z); 
         for(int i = 0; i < nb_joueurs; i++){
@@ -946,6 +958,53 @@ void updateGAME(){
         double dt = GetFrameTime(); 
         update_ball_mov(&(balls[i]), dt, maps); 
     }
+
+    if (estHote()){
+        if (!set_ball_pos_envoye) {  // flag modifié dans traiterSHOOT
+            int index = -1;
+            for (int i = 0; i < clients_app.nbUsers; i++) {
+                if (strcmp(clients_app.tab[i].name, pseudo_next_player) == 0) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index != -1) {
+                if (balls[index].inMovement == false) {
+
+                    req_send_multi.idReq = SET_BALL_POS;
+                    strcpy(req_send_multi.verbReq, "SET_BALL_POS");
+                    snprintf(req_send_multi.optReq, TAILLE_OPT, "%s:%f:%f:%f:%d", 
+                        clients_app.tab[current_player_index].name, 
+                        balls[index].pos.x,
+                        balls[index].pos.y,
+                        balls[index].pos.z,
+                        (int)balls[index].inHole
+                    );
+
+                    printApp2Clt("Envoi SET_BALL_POS avec options : %s:%f:%f:%f:%d\n", 
+                        clients_app.tab[current_player_index].name, 
+                        balls[index].pos.x,
+                        balls[index].pos.y,
+                        balls[index].pos.z,
+                        (int)balls[index].inHole
+                    );
+
+                    envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
+
+                    current_player_index = (current_player_index + 1) % clients_app.nbUsers;
+
+                    req_send_multi.idReq = NEXT_PLAYER_TO_PLAY;
+                    strcpy(req_send_multi.verbReq, "NEXT_PLAYER_TO_PLAY");
+                    strcpy(req_send_multi.optReq, clients_app.tab[current_player_index].name);
+
+                    envoi_no_ack(start_req_multitoclts);
+
+                    set_ball_pos_envoye = true;
+                }
+            }
+        }
+    
+    }   
     
     bool flag_bouton = false;  // on a appuyé sur un bouton de l'IHM -> pas de tir
 
