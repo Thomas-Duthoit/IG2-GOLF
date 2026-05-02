@@ -40,6 +40,7 @@ typedef enum {
     GAME, 
     END, 
     NEXT, 
+    PODIUM, 
 
 } game_state_t; 
 
@@ -68,7 +69,7 @@ void updateEND();
 void renderEND(); 
 
 void renderNEXT(); 
-
+void renderPODIUM(); 
 
 bool connecterClt2App(char * ip, short port);
 void * requetes_recurrentes_app_1s(void * arg); 
@@ -79,6 +80,7 @@ void checkNbPlayers();
 void charger_maps();
 int idx_my_ball();
 void shoot(Vector3 dir, float power);
+bool all_balls_in_hole();
 
 
 requete_t req_send_clt2reg;
@@ -122,6 +124,10 @@ bool next_round = false;
 bool balls_initialized = false; 
 
 int current_player_index; 
+
+int compteur_podium; 
+bool change_game_state = true; 
+double timePodium = 0; 
 
 double startCountdownTime = 0;
 double endScreenTime = 0;
@@ -188,7 +194,6 @@ int main(int argc, char **argv) {
     for (int i=0; i<MAX_USERS; i++) {
         hotes.tab[i].adrIP = (char *)malloc(sizeof(char)*16); 
     }
-
 
     // Allocation pour hôte du serveur applicatif rejoint
     hote_serv_app.adrIP = (char *)malloc(sizeof(char)*16); 
@@ -258,6 +263,7 @@ int main(int argc, char **argv) {
             startCountdownTime = GetTime();
             start_game = false; 
             balls_initialized = false; 
+            compteur_podium = 0; 
             //shoot = true;  // A retirer
         }
         else if (end_game)
@@ -270,11 +276,11 @@ int main(int argc, char **argv) {
         }
         else if(next_round)
         {
-            game_state = NEXT; 
+            game_state = PODIUM; 
             EnableCursor();
-            nextCountdownTime = GetTime();
             next_round = false; 
             balls_initialized = false; 
+            timePodium = GetTime(); 
         }
 
 
@@ -304,6 +310,14 @@ int main(int argc, char **argv) {
         }
         else if (game_state == NEXT){
             renderNEXT(); 
+        }
+        else if (game_state == PODIUM){
+            renderPODIUM();
+
+            if (GetTime() - timePodium > 10) {  // durée du podium
+                game_state = NEXT;
+                nextCountdownTime = GetTime();
+            }
         }
 
     }
@@ -931,6 +945,8 @@ void renderSTART(){
 
 void updateGAME(){
 
+    int compteur = 0; 
+
     if (my_ball_index == -1) my_ball_index = idx_my_ball();
 
     ground_info_t ground_info; 
@@ -939,6 +955,8 @@ void updateGAME(){
     if (!balls_initialized){
         if (estHote()) {
             current_player_index = 0;
+            set_ball_pos_envoye = false; 
+
             req_send_multi.idReq = NEXT_PLAYER_TO_PLAY;
             strcpy(req_send_multi.verbReq, "NEXT_PLAYER_TO_PLAY");
             strcpy(req_send_multi.optReq, clients_app.tab[current_player_index].name);
@@ -953,11 +971,32 @@ void updateGAME(){
 
         balls_initialized = true; 
     }
+
+
+    if (estHote() && all_balls_in_hole()) {
+        req_send_multi.idReq = START_NEXT_ROUND;
+        strcpy(req_send_multi.verbReq, "START_NEXT_ROUND");
+        strcpy(req_send_multi.optReq, "");
+
+        envoi_no_ack(start_req_multitoclts);
+
+        next_round = true;
+        set_ball_pos_envoye = false;
+        balls_initialized = false; 
+        return;
+    }
+
+
     
     for(int i = 0; i < nb_joueurs; i++){
         double dt = GetFrameTime(); 
-        update_ball_mov(&(balls[i]), dt, maps); 
+        if(!(balls[i].inHole)){
+            update_ball_mov(&(balls[i]), dt, maps); 
+            if(estHote()) isInHole(&(balls[i]), maps); 
+        }
     }
+
+
 
     if (estHote()){
         if (!set_ball_pos_envoye) {  // flag modifié dans traiterSHOOT
@@ -970,6 +1009,8 @@ void updateGAME(){
             }
             if (index != -1) {
                 if (balls[index].inMovement == false) {
+
+                    isInHole(&(balls[index]), maps); 
 
                     req_send_multi.idReq = SET_BALL_POS;
                     strcpy(req_send_multi.verbReq, "SET_BALL_POS");
@@ -990,9 +1031,25 @@ void updateGAME(){
                     );
 
                     envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
-
+                    
                     current_player_index = (current_player_index + 1) % clients_app.nbUsers;
 
+                    if(!all_balls_in_hole() && balls[current_player_index].inHole){
+                        while(balls[current_player_index].inHole != false){
+                            current_player_index = (current_player_index + 1) % clients_app.nbUsers;
+                        }
+                    }
+
+                    printf("\n\n");
+
+                    printf("nb_joueurs=%d clients_app.nbUsers=%d\n", nb_joueurs, clients_app.nbUsers);
+                    for(int i=0; i<clients_app.nbUsers; i++){
+                        printf("clients_app.tab[%d].name=%s balls[%d].inHole=%d\n", i, clients_app.tab[i].name, i, balls[i].inHole);
+                    }
+
+                    printf("\n\n");
+
+            
                     req_send_multi.idReq = NEXT_PLAYER_TO_PLAY;
                     strcpy(req_send_multi.verbReq, "NEXT_PLAYER_TO_PLAY");
                     strcpy(req_send_multi.optReq, clients_app.tab[current_player_index].name);
@@ -1000,11 +1057,13 @@ void updateGAME(){
                     envoi_no_ack(start_req_multitoclts);
 
                     set_ball_pos_envoye = true;
+                        
                 }
             }
         }
     
     }   
+
     
     bool flag_bouton = false;  // on a appuyé sur un bouton de l'IHM -> pas de tir
 
@@ -1156,8 +1215,23 @@ void updateGAME(){
 
 }
 
+bool all_balls_in_hole(){
+    int nbUsers = estHote() ? clients_app.nbUsers : clients.nbUsers; 
+
+    if(nbUsers == 0) return false; 
+
+    for(int i = 0; i < nbUsers; i++){
+        if(!balls[i].inHole) {
+            return false; 
+        }
+    }
+    return true; 
+}
+
 void renderGAME(){
     // partie affichage
+
+    int nbUsers; 
 
     BeginDrawing();
 
@@ -1167,14 +1241,11 @@ void renderGAME(){
 
             render_current_map(maps, current_map);
 
-            if(estHote()){
-                for (int i = 0; i < clients_app.nbUsers; i++){
-                    render_ball(&(balls[i]), i); 
-                }
-            }
-            else{
-                for (int i = 0; i < clients.nbUsers; i++){
-                    render_ball(&(balls[i]), i); 
+            nbUsers = estHote() ? clients_app.nbUsers : clients.nbUsers; 
+            
+            for (int i = 0; i < nbUsers; i++){
+                if(!(balls[i].inHole)){
+                   render_ball(&(balls[i]), i); 
                 }
             }
 
@@ -1188,17 +1259,17 @@ void renderGAME(){
 
         EndMode3D();
 
-        //UpdateCamera(&camera, CAMERA_FREE); 
-
 
         if(estHote()){
             for (int i = 0; i < clients_app.nbUsers; i++){
-                render_ball_name(&(balls[i]), clients_app.tab[i].name);
+                if(!(balls[i].inHole))
+                    render_ball_name(&(balls[i]), clients_app.tab[i].name);
             }
         }
         else{
             for (int i = 0; i < clients.nbUsers; i++){
-                render_ball_name(&(balls[i]), clients.tab[i].name); 
+                if(!(balls[i].inHole))
+                    render_ball_name(&(balls[i]), clients.tab[i].name); 
             }
         } 
 
@@ -1368,4 +1439,15 @@ void shoot(Vector3 dir, float power) {
     printIHM("Envoi du tir : %s\n", req_send_clt2app.optReq);
 
     envoi_avec_ack(start_reqrep_clt2app, end_reqrep_clt2app, MUT_END_REQREP_CLT2APP);
+}
+
+void renderPODIUM(){
+    BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        DrawText("Affichage du podium des joueurs", 220, 150, 30, BLACK);
+
+        DrawFPS(10, 450-20);
+
+    EndDrawing();
 }

@@ -1097,11 +1097,16 @@ void traiterSET_BALL_POS(requete_t * req){
             name_t name;
             float x, y, z;
             bool inHole;
+            int inHole_int; 
 
             
-            sscanf(req->optReq, "%[^:]:%f:%f:%f:%d", name, &x, &y, &z, (int*)&inHole);
+            sscanf(req->optReq, "%[^:]:%f:%f:%f:%d", name, &x, &y, &z, &inHole_int);
+            inHole = (bool)inHole_int; 
 
             printMulticast("Nouvelle pos pour %s\n", name);
+            printf("SET_BALL_POS reçu : nom=%s pos=%f %f %f inHole=%d\n", name, x, y, z, inHole);
+
+            printf("optReq brut reçu : [%s]\n", req->optReq);
 
             // index joueur
             users_t *u_list;
@@ -1128,6 +1133,22 @@ void traiterSET_BALL_POS(requete_t * req){
                 balls[index].pos.z = z;
                 balls[index].inMovement = false;
                 balls[index].inHole = inHole;
+
+
+                bool all_in_hole = true; 
+
+                for(int i = 0; i < u_list->nbUsers; i++){
+                    if(!balls[i].inHole){
+                        all_in_hole = false; 
+                        break; 
+                    }
+                }
+
+                if(all_in_hole && u_list->nbUsers > 0){
+                    next_round = true; 
+                }
+
+
             }
 
 

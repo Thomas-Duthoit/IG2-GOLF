@@ -42,7 +42,7 @@ typedef struct{
     bool inAir; // dans les airs
     bool inMovement; // en mouvement
 
-    bool inHole; 
+    bool inHole; // la balle est dans le trou ou non 
 
 } ball_t; 
 
@@ -51,6 +51,7 @@ typedef struct{
 
 void init_pos_ball(ball_t * ball, float startX, float startZ, float startY); // Initialisation de la balle et de sa position
 void update_ball_mov(ball_t * ball, double dt, map_t * map); // update du mouvement de la balle
+void isInHole(ball_t * ball, map_t * map); // check balle dans le trou
 
 
 #endif // PHYSIC_H

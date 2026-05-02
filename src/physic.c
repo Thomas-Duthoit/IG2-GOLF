@@ -2,7 +2,7 @@
 
 // Prototype fonction interne
 void checkArret(ground_info_t ground_info, ball_t * ball);  
-void updateValue(ground_info_t ground_info, Vector3 * pos_th, ball_t * ball, float dt);  
+void updateValue(ground_info_t ground_info, Vector3 * pos_th, ball_t * ball, float dt);   
 
 
 
@@ -46,9 +46,9 @@ void update_ball_mov(ball_t * ball, double dt, map_t * map){
 
     if (
         ball->pos.x >= 0 
-        && ball->pos.y >= 0
+        && ball->pos.z >= 0
         && ball->pos.x <= map->width
-        && ball->pos.y <= map->height
+        && ball->pos.z <= map->height
     ) {
         ground_info = get_ground_info(map, ball->pos.x, ball->pos.z); 
 
@@ -58,7 +58,7 @@ void update_ball_mov(ball_t * ball, double dt, map_t * map){
     ball->pos.x = pos_th.x; 
     ball->pos.y = pos_th.y; 
     ball->pos.z = pos_th.z; 
-
+    
     checkArret(ground_info, ball);    
 
     float waterHeight = -2.0f;
@@ -66,34 +66,42 @@ void update_ball_mov(ball_t * ball, double dt, map_t * map){
         ground_info_t start_ground_info = get_ground_info(map, map->start_x, map->start_z);
         ball->vel = (Vector3) {0.0, 0.0, 0.0};
         init_pos_ball(ball, map->start_x, map->start_z, start_ground_info.y);
+        return; 
     }
 }
+
 
 
 
 void isInHole(ball_t * ball, map_t * map){
     ground_info_t ground_info; 
 
+    if (ball->inHole) return; 
+
     ground_info = get_ground_info(map, ball->pos.x, ball->pos.z); 
 
-    if((ball->pos.x - map->hole_x < DIS_HOLE_OK) && (ball->pos.z - map->hole_z < DIS_HOLE_OK) && (ball->pos.y - ground_info.y < DIS_HOLE_OK)
-                                                    && (ball->vel.x < VEL_HOLE_OK) && (ball->vel.z < VEL_HOLE_OK) && (ball->vel.y < VEL_HOLE_OK) ){
-        ball->inHole = true; 
-        return; 
-    }else{
-        ball->inHole = false; 
-        return; 
+    if((fabs(ball->pos.x - map->hole_x) < DIS_HOLE_OK) && 
+        (fabs(ball->pos.z - map->hole_z) < DIS_HOLE_OK) && 
+        (fabs(ball->pos.y - ground_info.y) < DIS_HOLE_OK) && 
+        (ball->vel.x < VEL_HOLE_OK) && 
+        (ball->vel.z < VEL_HOLE_OK) && 
+        (ball->vel.y < VEL_HOLE_OK) ){
+            ball->inHole = true;  
+            printf("DANS LE TROU\n"); 
+            ball->vel = (Vector3){0.0, 0.0, 0.0}; 
     }
 }
 
 
 
-
-
 /*-------------------------INTERNE------------------------*/
+
+
+
+
 void checkArret(ground_info_t ground_info, ball_t * ball){
 
-    if( (fabsf(ground_info.grad_x) < EPSILON_GRAD) && (fabsf(ground_info.grad_z) < EPSILON_GRAD) && (fabsf(ball->vel.x) <  EPSILON_VEL) && (fabsf(ball->vel.y) <  EPSILON_VEL) && (fabsf(ball->vel.z) <  EPSILON_VEL)){
+    if( (fabs(ground_info.grad_x) < EPSILON_GRAD) && (fabs(ground_info.grad_z) < EPSILON_GRAD) && (fabs(ball->vel.x) <  EPSILON_VEL) && (fabs(ball->vel.y) <  EPSILON_VEL) && (fabs(ball->vel.z) <  EPSILON_VEL)){
         ball->inMovement = false; 
         ball->vel.x = 0; 
         ball->vel.y = 0; 
