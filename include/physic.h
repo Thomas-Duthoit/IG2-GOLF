@@ -14,6 +14,9 @@
 #include "map.h"
 
 
+#define MAX_PUISSANCE 13.0f
+
+
 #define BALL_RADIUS 0.1     // Rayon de la balle
 #define G 9.8               // constante de gravité
 #define KGRAD 1             // constante accélération pente
