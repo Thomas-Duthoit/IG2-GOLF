@@ -82,7 +82,7 @@ bool balls_initialized = false;
 
 int current_player_index; 
 
-int compteur_podium; 
+int compteur_podium = 0; 
 bool change_game_state = true; 
 double timePodium = 0; 
 
@@ -272,8 +272,15 @@ int main(int argc, char **argv) {
             renderPODIUM();
 
             if (GetTime() - timePodium > 10) {  // durée du podium
-                game_state = NEXT;
-                nextCountdownTime = GetTime();
+                if(compteur_podium >= 2){
+                    game_state = END; 
+                    endScreenTime = GetTime(); 
+                }
+                else {
+                    game_state = NEXT;
+                    nextCountdownTime = GetTime();
+                }
+                compteur_podium++; 
             }
         }
 

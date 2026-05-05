@@ -357,9 +357,14 @@ void updateGAME(){
         }
         // Positionnement initial des balles 
         ground_info = get_ground_info(maps, maps->start_x, maps->start_z); 
+        printf("\n\n");
+
         for(int i = 0; i < nb_joueurs; i++){
             init_pos_ball(&(balls[i]), maps->start_x, maps->start_z, ground_info.y);
+            printf("Balle [%d] : position : %f;%f;%f\n", i, balls[i].pos.x, balls[i].pos.y, balls[i].pos.z);
         }
+
+        printf("\n\n");
 
         balls_initialized = true; 
     }
