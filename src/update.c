@@ -392,7 +392,7 @@ void updateGAME(){
         double dt = GetFrameTime(); 
         if(!(balls[i].inHole)){
             update_ball_mov(&(balls[i]), dt, maps); 
-            if(estHote()) isInHole(&(balls[i]), maps); 
+            isInHole(&(balls[i]), maps); 
         }
     }
 
@@ -408,7 +408,7 @@ void updateGAME(){
                 }
             }
             if (index != -1) {
-                if (balls[index].inMovement == false) {
+                if (Vector3Length(balls[index].vel) < 0.01f) {
 
                     isInHole(&(balls[index]), maps); 
 
@@ -497,23 +497,6 @@ void updateGAME(){
             }
 
             
-            // bouton next player
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){20, 20, 20, 20})) {
-                if (clients_app.nbUsers == 0) return;
-
-                // Rotation circulaire
-                current_player_index = (current_player_index + 1) % clients_app.nbUsers;
-
-                req_send_multi.idReq = NEXT_PLAYER_TO_PLAY;
-                strcpy(req_send_multi.verbReq, "NEXT_PLAYER_TO_PLAY");
-                strcpy(req_send_multi.optReq, clients_app.tab[current_player_index].name);
-
-                envoi_no_ack(start_req_multitoclts);
-
-                flag_bouton = true;  // on a appuyé sur un bouton de l'IHM -> pas de tir
-            }
-
-
             // bouton next round 
             if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){20, 60, 20, 20})) {
 
