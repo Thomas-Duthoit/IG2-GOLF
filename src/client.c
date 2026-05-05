@@ -138,6 +138,7 @@ int scores[NB_JOUEURS_MAX][NB_MANCHE];
 
 
 
+
 int main(int argc, char **argv) {
 
     if (argc < 4) {
@@ -224,7 +225,6 @@ int main(int argc, char **argv) {
             start_game = false; 
             balls_initialized = false; 
             compteur_podium = 0; 
-            //shoot = true;  // A retirer
         }
         else if (end_game)
         {

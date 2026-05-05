@@ -66,6 +66,8 @@
     extern int scores[NB_JOUEURS_MAX][NB_MANCHE]; // Podium
     extern int compteur_podium;
 
+
+
     
 #endif
 
@@ -1204,6 +1206,8 @@ void traiterNEXT_PLAYER_TO_PLAY(requete_t * req){
                     break;
                 }
             }
+
+            printf("\n\n\n----------------------\nNEXT_PLAYER_TO_PLAY reçu : %s\n\n---------------------------\n\n\n", pseudo_next_player);
             
             scores[index][compteur_podium]++;
 

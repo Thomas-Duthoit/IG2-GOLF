@@ -350,7 +350,7 @@ void updateGAME(){
     if (!balls_initialized){
         if (estHote()) {
             current_player_index = 0;
-            set_ball_pos_envoye = false; 
+            set_ball_pos_envoye = true; 
 
             req_send_multi.idReq = NEXT_PLAYER_TO_PLAY;
             strcpy(req_send_multi.verbReq, "NEXT_PLAYER_TO_PLAY");
@@ -411,6 +411,19 @@ void updateGAME(){
                 if (Vector3Length(balls[index].vel) < 0.01f) {
 
                     isInHole(&(balls[index]), maps); 
+
+                    if (all_balls_in_hole()) {
+                        req_send_multi.idReq = START_NEXT_ROUND;
+                        strcpy(req_send_multi.verbReq, "START_NEXT_ROUND");
+                        strcpy(req_send_multi.optReq, "");
+
+                        envoi_no_ack(start_req_multitoclts);
+
+                        next_round = true;
+                        set_ball_pos_envoye = false;
+                        balls_initialized = false;
+                        return;
+                    }
 
                     req_send_multi.idReq = SET_BALL_POS;
                     strcpy(req_send_multi.verbReq, "SET_BALL_POS");
