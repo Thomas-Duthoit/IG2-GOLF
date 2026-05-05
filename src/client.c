@@ -30,7 +30,6 @@
 
 
 
-
 void * serv_applicatif(void * arg);
 void * requetes_recurrentes_reg_1s(void * arg);
 int get_local_ip(char *buffer);
@@ -132,6 +131,10 @@ bool can_shoot;  // on peut tirer ou non
 
 
 bool set_ball_pos_envoye = false;
+
+
+// Podium
+int scores[NB_JOUEURS_MAX][NB_MANCHE]; 
 
 
 
@@ -272,7 +275,7 @@ int main(int argc, char **argv) {
             renderPODIUM();
 
             if (GetTime() - timePodium > 10) {  // durée du podium
-                if(compteur_podium >= 2){
+                if(compteur_podium >= NB_MANCHE - 1){
                     game_state = END; 
                     endScreenTime = GetTime(); 
                 }

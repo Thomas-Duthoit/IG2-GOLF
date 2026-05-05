@@ -107,8 +107,9 @@ extern Vector2 mouse_delta;
 
 extern bool can_shoot;  // on peut tirer ou non
 
-
 extern bool set_ball_pos_envoye;
+
+extern int scores[NB_JOUEURS_MAX][NB_MANCHE]; // Podium
 
 
 // Fonction interne 
@@ -241,20 +242,22 @@ void updateLOBBY(){
 
         }
 
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){700, 430, 100, 20})) {
-            req_send_multi.idReq = START_GAME;
-            strcpy(req_send_multi.verbReq, "START_GAME");
-            strcpy(req_send_multi.optReq, "");
+        if(clients_app.nbUsers > 1){
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){700, 430, 100, 20})) {
+                req_send_multi.idReq = START_GAME;
+                strcpy(req_send_multi.verbReq, "START_GAME");
+                strcpy(req_send_multi.optReq, "");
 
-            envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
+                envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
 
 
-            // Fait disparaître le serveur applicatif de la liste des hotes
-            req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
-            strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
-            snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:F", pseudo);
-                        
-            envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
+                // Fait disparaître le serveur applicatif de la liste des hotes
+                req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
+                strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
+                snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:F", pseudo);
+                            
+                envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
+            }
         }
 
     }

@@ -2,6 +2,7 @@
 #include "users.h"
 #include "update.h"
 #include "map.h"
+#include "dial.h"
 #include "graphics.h"
 
 extern short PORT_SRV_APP;
@@ -39,6 +40,8 @@ extern bool set_ball_pos_envoye;
 
 extern ball_t balls[MAX_USERS];
 extern int my_ball_index;  // -1 = pas trouvé, sinon index
+
+extern int scores[NB_JOUEURS_MAX][NB_MANCHE]; // Podium
 
 
 
@@ -128,8 +131,10 @@ void renderLOBBY(){
         DrawText("X", 770, 35, 20, BLACK);
 
         // bouton start
-        DrawRectangle(700, 430, 100, 20, GRAY);
-        DrawText("START", 720, 430, 20, BLACK);
+        if(clients_app.nbUsers > 1){
+            DrawRectangle(700, 430, 100, 20, GRAY);
+            DrawText("START", 720, 430, 20, BLACK);
+        }
 
 
         // récupération de la position de la souris
@@ -141,10 +146,13 @@ void renderLOBBY(){
             DrawRectangle(760, 30, 30, 30, RED);
             DrawText("X", 770, 35, 20, DARKGRAY);
         }
-        // bouton start
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){700, 430, 100, 20})) {
-            DrawRectangle(700, 430, 100, 20, GREEN);
-            DrawText("START", 720, 430, 20, DARKGREEN);
+
+        if(clients_app.nbUsers > 1){
+            // bouton start
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){700, 430, 100, 20})) {
+                DrawRectangle(700, 430, 100, 20, GREEN);
+                DrawText("START", 720, 430, 20, DARKGREEN);
+            }
         }
 
 
@@ -401,10 +409,53 @@ void renderNEXT(){
 #pragma region PODIUM
 
 void renderPODIUM(){
+
+    int nbUsers = estHote() ? clients_app.nbUsers : clients.nbUsers; 
+
+    users_t *u_list;
+    if (estHote()) {
+        u_list = &clients_app;
+    } else {
+        u_list = &clients;
+    }
+
     BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        DrawText("Affichage du podium des joueurs", 220, 150, 30, BLACK);
+        DrawText("Résultat :", 10, 10, 20, BLACK);
+
+
+        // Affichage des pseudos
+        DrawText("Joueurs", 100, 50, 20, BLACK); 
+        for(int i = 0; i < nbUsers; i++){
+            DrawText(TextFormat("%s", u_list->tab[i].name), 100, 50 + (i+1)*50, 20, BLACK); 
+        }
+
+        // Affichage score manche 1
+        DrawText("1", 200, 50, 20, BLACK); 
+        for(int i = 0; i < nbUsers; i++){
+            DrawText(TextFormat("%d", scores[i][0]), 200, 50 + (i+1)*50, 20, BLACK); 
+        }
+
+        // Affichage score manche 2
+        DrawText("2", 300, 50, 20, BLACK); 
+        for(int i = 0; i < nbUsers; i++){
+            DrawText(TextFormat("%d", scores[i][1]), 300, 50 + (i+1)*50, 20, BLACK); 
+        }
+
+        // Affichage score manche 3
+        DrawText("3", 400, 50, 20, BLACK); 
+        for(int i = 0; i < nbUsers; i++){
+            DrawText(TextFormat("%d", scores[i][2]), 400, 50 + (i+1)*50, 20, BLACK); 
+        }
+
+        // Affichage total
+        DrawText("Total", 500, 50, 20, BLACK); 
+        for(int i = 0; i < nbUsers; i++){
+            DrawText(TextFormat("%d", (scores[i][0] + scores[i][1] + scores[i][2])), 500, 50 + (i+1)*50, 20, BLACK); 
+        }
+
+
 
         DrawFPS(10, 450-20);
 

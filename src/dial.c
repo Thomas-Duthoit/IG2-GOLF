@@ -8,8 +8,13 @@
 #include "reqRep.h"
 #include "physic.h"
 
-
 #ifdef CLIENT
+
+    //#include "update.h"
+
+    #define NB_MANCHE 3
+
+
     extern requete_t req_send_clt2reg;
     extern char buff_pseudos_hotes[TAILLE_OPT];
     extern pthread_cond_t end_reqrep_clt2reg;
@@ -57,6 +62,10 @@
     extern bool can_shoot;  // on peut tirer ou non
 
     extern bool set_ball_pos_envoye;
+
+    extern int scores[NB_JOUEURS_MAX][NB_MANCHE]; // Podium
+    extern int compteur_podium;
+
     
 #endif
 
@@ -1057,7 +1066,7 @@ void traiterSET_BALL_VEL(requete_t * req){
             }
             int nb_utilisateurs = u_list->nbUsers;
 
-            // Trouver l'index dans la BONNE liste
+            // Trouver l'index 
             int index = -1;
             for (int i = 0; i < nb_utilisateurs; i++) {
                 if (strcmp(u_list->tab[i].name, name) == 0) {
@@ -1117,7 +1126,7 @@ void traiterSET_BALL_POS(requete_t * req){
             }
             int nb_utilisateurs = u_list->nbUsers;
 
-            // Trouver l'index dans la BONNE liste
+            // Trouver l'index 
             int index = -1;
             for (int i = 0; i < nb_utilisateurs; i++) {
                 if (strcmp(u_list->tab[i].name, name) == 0) {
@@ -1177,6 +1186,27 @@ void traiterNEXT_PLAYER_TO_PLAY(requete_t * req){
             if (!strcmp(pseudo, pseudo_next_player)) {
                 can_shoot = true;
             }
+
+
+
+            users_t *u_list;
+            if (estHote()) {
+                u_list = &clients_app;
+            } else {
+                u_list = &clients;
+            }
+            int nb_utilisateurs = u_list->nbUsers;
+
+            int index = -1;
+            for (int i = 0; i < nb_utilisateurs; i++) {
+                if (strcmp(u_list->tab[i].name, pseudo_next_player) == 0) {
+                    index = i;
+                    break;
+                }
+            }
+            
+            scores[index][compteur_podium]++;
+
             
 
         }else{
