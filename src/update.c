@@ -124,15 +124,13 @@ void shoot(Vector3 dir, float power);
 
 void updateLIST(){
 
-    // partie IHM (clics, etc...)
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 
-        // récupération de la position de la souris
         int mouse_x = GetMouseX();
         int mouse_y = GetMouseY();
 
-        // bouton host
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
+        Rectangle hostButton = {300, 100, 200, 60};
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, hostButton)) {
 
             if (connecterClt2App(IP_SERVICE, PORT_SRV_APP)) {
                 req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
@@ -151,31 +149,10 @@ void updateLIST(){
             }
         }
 
-        // bouton online
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 30, 30})) {
-
-            req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
-            strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
-            snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:O", pseudo);
-                        
-            envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
-        }
-
-        // bouton full
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 30, 30})) {
-
-            req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
-            strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
-            snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:F", pseudo);
-                        
-            envoi_avec_ack(start_reqrep_clt2reg, end_reqrep_clt2reg, MUT_END_REQREP_CLT2REG);
-        }
-
         for (int i=0; i<hotes.nbUsers; i++) {
 
-            requete_t req;
-
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 110+(20*i), 20, 20})) {
+            Rectangle hostEntry = {10, 230 + (30 * i), 300, 20};
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, hostEntry)) {
                 
                 if (connecterClt2App(hotes.tab[i].adrIP, hotes.tab[i].port_srv_app)) {
                             
@@ -200,35 +177,28 @@ void updateLIST(){
 
 void updateLOBBY(){
 
-
     checkNbPlayers(); 
 
-    // partie IHM (clics, etc...)
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 
-        // récupération de la position de la souris
         int mouse_x = GetMouseX();
         int mouse_y = GetMouseY();
         
-        // bouton quitter
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
+        Rectangle quitButton = {300, 100, 200, 60};
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, quitButton)) {
 
-            // Envoi message fermeture du serveur applicatif
             req_send_multi.idReq = END_SERV;
             strcpy(req_send_multi.verbReq, "END_SERV");
             strcpy(req_send_multi.optReq, "");
 
             envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
 
-
             clients_app.nbUsers = 0; 
 
-            // Déconnexion de son serveur
             req_send_clt2app.idReq = END_DIAL;
             strcpy(req_send_clt2app.verbReq, "END_DIAL");
             strcpy(req_send_clt2app.optReq, "");
             envoi_no_ack(start_reqrep_clt2app);
-
 
             req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
             strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
@@ -243,17 +213,15 @@ void updateLOBBY(){
         }
 
         if(clients_app.nbUsers > 1){
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){700, 430, 100, 20})) {
+            Rectangle startButton = {300, 180, 200, 60};
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, startButton)) {
                 req_send_multi.idReq = START_GAME;
                 strcpy(req_send_multi.verbReq, "START_GAME");
                 int n = rand() % MAX_MAPS;
                 snprintf(req_send_multi.optReq, TAILLE_OPT, "%d", n);
-                //strcpy(req_send_multi.optReq, "");
 
                 envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
 
-
-                // Fait disparaître le serveur applicatif de la liste des hotes
                 req_send_clt2reg.idReq=UPDT_CLIENT_STATE;
                 strcpy(req_send_clt2reg.verbReq, "UPDT_CLIENT_STATE");
                 snprintf(req_send_clt2reg.optReq, TAILLE_OPT, "%s:F", pseudo);
@@ -263,7 +231,6 @@ void updateLOBBY(){
         }
 
     }
-
 
 } 
 
@@ -276,12 +243,9 @@ void updateLOBBY(){
 void updateLOBBYClt(){
     requete_t req; 
 
-    // Déconnexion du serveur applicatif 
     if (deconnexion_serv_app) {
         printIHM("... Le serveur applicatif vient de se fermer\n");
 
-        // Fermeture propre du client avec le serveur applicatif
-        
         req_send_clt2app.idReq = END_DIAL; 
         strcpy(req_send_clt2app.verbReq, "END_DIAL"); 
         strcpy(req_send_clt2app.optReq, ""); 
@@ -302,16 +266,13 @@ void updateLOBBYClt(){
         return; 
     }
 
-    // partie IHM (clics, etc...)
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {  // clic gauche
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 
-        // récupération de la position de la souris
         int mouse_x = GetMouseX();
         int mouse_y = GetMouseY();
         
-        // bouton quitter
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
-            // Déconnexion du serveur applicatif
+        Rectangle quitButton = {300, 100, 200, 60};
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, quitButton)) {
             printIHM("Déconnexion de la partie ...\n"); 
 
             req_send_clt2app.idReq=LEAVE_GAME; 
@@ -331,8 +292,8 @@ void updateLOBBYClt(){
 
     }
 
-
 } 
+
 
 #pragma endregion
 

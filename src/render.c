@@ -48,69 +48,37 @@ extern int scores[NB_JOUEURS_MAX][NB_MANCHE]; // Podium
 #pragma region LIST
 
 void renderLIST(){
-    // partie affichage
     BeginDrawing();
 
-        ClearBackground(RAYWHITE);
-        DrawText("ETAT :", 10, 10, 20, BLACK);
+        ClearBackground(SKYBLUE);
 
-        // bouton host
-        DrawRectangle(10, 30, 30, 30, GRAY);
-        DrawText("H", 13, 33, 20, BLACK);
+        Rectangle hostButton = {300, 100, 200, 60};
+        DrawRectangleRec(hostButton, GRAY);
+        DrawText("HÔTE", hostButton.x + 75, hostButton.y + 20, 20, BLACK);
 
-        // bouton online
-        DrawRectangle(50, 30, 30, 30, GRAY);
-        DrawText("O", 53, 33, 20, BLACK);
-
-        // bouton full
-        DrawRectangle(90, 30, 30, 30, GRAY);
-        DrawText("F", 93, 33, 20, BLACK);
-
-        // récupération de la position de la souris
         int mouse_x = GetMouseX();
         int mouse_y = GetMouseY();
 
-            
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {  // clic gauche
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, hostButton)) {
+            DrawRectangleRec(hostButton, GREEN);
+            DrawText("HÔTE", hostButton.x + 75, hostButton.y + 20, 20, DARKGREEN);
+        }
 
+        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_SERVICE, PORT_SRV_APP), 10, 170, 20, BLACK);
+        DrawText("Liste des hotes :", 10, 200, 20, BLACK);
 
-            // bouton host
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 30, 30, 30})) {
-                DrawRectangle(10, 30, 30, 30, GREEN);
-                DrawText("H", 13, 33, 20, DARKGREEN);
-            }
-
-            // bouton online
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){50, 30, 30, 30})) {
-                DrawRectangle(50, 30, 30, 30, GREEN);
-                DrawText("O", 53, 33, 20, DARKGREEN);
-            }
-
-            // bouton full
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){90, 30, 30, 30})) {
-                DrawRectangle(90, 30, 30, 30, GREEN);
-                DrawText("F", 93, 33, 20, DARKGREEN);
+        for (int i = 0; i < hotes.nbUsers; i++) {
+            Rectangle hostEntry = {10, 230 + (30 * i), 300, 20};
+            DrawRectangleRec(hostEntry, GRAY);
+            DrawText(hotes.tab[i].name, hostEntry.x + 5, hostEntry.y, 20, BLACK);
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, hostEntry)) {
+                DrawRectangleRec(hostEntry, GREEN);
+                DrawText(hotes.tab[i].name, hostEntry.x + 5, hostEntry.y, 20, DARKGREEN);
             }
         }
 
-        // affichage @IP + port
-        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_SERVICE, PORT_SRV_APP), 10, 70, 20, BLACK);
-        DrawText("Liste des hotes : ", 10, 90, 20, BLACK);
+        DrawFPS(10, 430);
 
-        for (int i=0; i<hotes.nbUsers; i++) {
-            DrawRectangle(10, 110+(20*i), 20, 20, GRAY);
-            DrawText(">", 10, 110+(20*i), 20, BLACK);
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){10, 110+(20*i), 20, 20})) {
-                DrawRectangle(10, 110+(20*i), 20, 20, GREEN);
-                DrawText(">", 10, 110+(20*i), 20, DARKGREEN);
-            }
-            DrawText(TextFormat("> %s  - %s : %hu", hotes.tab[i].name, hotes.tab[i].adrIP, hotes.tab[i].port_srv_app), 40, 110+(20*i), 20, BLACK);
-        }
-
-
-
-        DrawFPS(10, 450-20);
-    
     EndDrawing();
 }
 
@@ -121,49 +89,44 @@ void renderLIST(){
 #pragma region LOBBY
 
 void renderLOBBY(){
-    // partie affichage
     BeginDrawing();
 
-        ClearBackground(RAYWHITE);
+        ClearBackground(SKYBLUE);
 
-        // bouton quitter
-        DrawRectangle(760, 30, 30, 30, GRAY);
-        DrawText("X", 770, 35, 20, BLACK);
+        DrawText("Salle d'attente - Hôte", 10, 10, 20, BLACK);
 
-        // bouton start
+        Rectangle quitButton = {300, 100, 200, 60};
+        DrawRectangleRec(quitButton, GRAY);
+        DrawText("QUITTER", quitButton.x + 65, quitButton.y + 20, 20, BLACK);
+
         if(clients_app.nbUsers > 1){
-            DrawRectangle(700, 430, 100, 20, GRAY);
-            DrawText("START", 720, 430, 20, BLACK);
+            Rectangle startButton = {300, 180, 200, 60};
+            DrawRectangleRec(startButton, GRAY);
+            DrawText("START", startButton.x + 75, startButton.y + 20, 20, BLACK);
         }
 
-
-        // récupération de la position de la souris
         int mouse_x = GetMouseX();
         int mouse_y = GetMouseY();
 
-        // bouton quitter
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
-            DrawRectangle(760, 30, 30, 30, RED);
-            DrawText("X", 770, 35, 20, DARKGRAY);
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, quitButton)) {
+            DrawRectangleRec(quitButton, RED);
+            DrawText("QUITTER", quitButton.x + 65, quitButton.y + 20, 20, DARKGRAY);
         }
 
         if(clients_app.nbUsers > 1){
-            // bouton start
-            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){700, 430, 100, 20})) {
-                DrawRectangle(700, 430, 100, 20, GREEN);
-                DrawText("START", 720, 430, 20, DARKGREEN);
+            Rectangle startButton = {300, 180, 200, 60};
+            if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, startButton)) {
+                DrawRectangleRec(startButton, GREEN);
+                DrawText("START", startButton.x + 75, startButton.y + 20, 20, DARKGREEN);
             }
         }
 
-
-        // affichage @IP + port
-        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_SERVICE, PORT_SRV_APP), 10, 10, 20, BLACK);
-        
+        DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_SERVICE, PORT_SRV_APP), 10, 250, 20, BLACK);
+        DrawText("Joueurs connectés :", 10, 280, 20, BLACK);
         
         for (int i=0; i<clients_app.nbUsers; i++) {
-            DrawText(TextFormat("> %s ", clients_app.tab[i].name), 40, 110+(20*i), 20, BLACK);
+            DrawText(TextFormat("- %s", clients_app.tab[i].name), 40, 310 + (30*i), 20, BLACK);
         }
-
 
         DrawFPS(10, 450-20);
 
@@ -177,41 +140,35 @@ void renderLOBBY(){
 #pragma region LOBBY Client
 
 void renderLOBBYClt(){
-    // partie affichage
     BeginDrawing();
 
-        ClearBackground(RAYWHITE);
+        ClearBackground(SKYBLUE);
 
-        // bouton quitter
-        DrawRectangle(760, 30, 30, 30, GRAY);
-        DrawText("X", 770, 35, 20, BLACK);
+        DrawText(TextFormat("Bienvenue dans le serveur de [%s] !!", hote_serv_app.name), 10, 10, 20, BLACK);
 
+        Rectangle quitButton = {300, 100, 200, 60};
+        DrawRectangleRec(quitButton, GRAY);
+        DrawText("QUITTER", quitButton.x + 65, quitButton.y + 20, 20, BLACK);
 
-        // récupération de la position de la souris
         int mouse_x = GetMouseX();
         int mouse_y = GetMouseY();
 
-        // bouton quitter
-        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){760, 30, 30, 30})) {
-            DrawRectangle(760, 30, 30, 30, RED);
-            DrawText("X", 770, 35, 20, DARKGRAY);
+        if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, quitButton)) {
+            DrawRectangleRec(quitButton, RED);
+            DrawText("QUITTER", quitButton.x + 65, quitButton.y + 20, 20, DARKGRAY);
         }
 
-        // TODO : Voir pour mettre le pseudo dans une autre couleur
-        DrawText(TextFormat("Bienvenue dans le serveur de [%s] !!", hote_serv_app.name), 10, 10, 20, BLACK);
-        // affichage @IP + port
-        //DrawText(TextFormat("IP serveur applicatif : %s:%hu", IP_SERVICE, PORT_SRV_APP), 20, 20, 20, BLACK);
-        
+        DrawText("Joueurs connectés :", 10, 200, 20, BLACK);
         
         for (int i=0; i<clients.nbUsers; i++) {
-            DrawText(TextFormat("> %s ", clients.tab[i].name), 40, 110+(20*i), 20, BLACK);
+            DrawText(TextFormat("- %s", clients.tab[i].name), 40, 230 + (30*i), 20, BLACK);
         }
-
 
         DrawFPS(10, 450-20);
 
     EndDrawing();
 }
+
 
 #pragma endregion
 
