@@ -156,6 +156,8 @@ int main(int argc, char **argv) {
         hotes.tab[i].adrIP = (char *)malloc(sizeof(char)*16); 
     }
 
+    srand(time(NULL));  // seed aléatoire pour le random
+
     // Allocation pour hôte du serveur applicatif rejoint
     hote_serv_app.adrIP = (char *)malloc(sizeof(char)*16); 
 
@@ -428,7 +430,7 @@ void charger_maps() {
 
     for (int i=0; i<MAX_MAPS; i++) {
         snprintf(buff, 1000, "maps/map%d.txt", i);
-        load_map(&maps[0], buff);
+        load_map(&maps[i], buff);
     }
 }
 

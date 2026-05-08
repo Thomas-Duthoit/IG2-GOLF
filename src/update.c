@@ -246,7 +246,9 @@ void updateLOBBY(){
             if (CheckCollisionPointRec((Vector2){mouse_x, mouse_y}, (Rectangle){700, 430, 100, 20})) {
                 req_send_multi.idReq = START_GAME;
                 strcpy(req_send_multi.verbReq, "START_GAME");
-                strcpy(req_send_multi.optReq, "");
+                int n = rand() % MAX_MAPS;
+                snprintf(req_send_multi.optReq, TAILLE_OPT, "%d", n);
+                //strcpy(req_send_multi.optReq, "");
 
                 envoi_avec_ack(start_req_multitoclts, end_req_multitoclts, MUT_END_REQ_MUTLITOCLTS);
 
@@ -376,7 +378,9 @@ void updateGAME(){
     if (estHote() && all_balls_in_hole()) {
         req_send_multi.idReq = START_NEXT_ROUND;
         strcpy(req_send_multi.verbReq, "START_NEXT_ROUND");
-        strcpy(req_send_multi.optReq, "");
+        //strcpy(req_send_multi.optReq, "");
+        int n = rand() % MAX_MAPS;
+        snprintf(req_send_multi.optReq, TAILLE_OPT, "%d", n);
 
         envoi_no_ack(start_req_multitoclts);
 
@@ -415,8 +419,10 @@ void updateGAME(){
                     if (all_balls_in_hole()) {
                         req_send_multi.idReq = START_NEXT_ROUND;
                         strcpy(req_send_multi.verbReq, "START_NEXT_ROUND");
-                        strcpy(req_send_multi.optReq, "");
-
+                        //strcpy(req_send_multi.optReq, "");
+                        int n = rand() % MAX_MAPS;
+                        snprintf(req_send_multi.optReq, TAILLE_OPT, "%d", n);
+                    
                         envoi_no_ack(start_req_multitoclts);
 
                         next_round = true;
@@ -515,7 +521,9 @@ void updateGAME(){
 
                 req_send_multi.idReq = START_NEXT_ROUND;
                 strcpy(req_send_multi.verbReq, "START_NEXT_ROUND");
-                strcpy(req_send_multi.optReq, "");
+                //strcpy(req_send_multi.optReq, "");
+                int n = rand() % MAX_MAPS;
+                snprintf(req_send_multi.optReq, TAILLE_OPT, "%d", n);
 
                 envoi_no_ack(start_req_multitoclts);
 

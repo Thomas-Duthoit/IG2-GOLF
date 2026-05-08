@@ -66,6 +66,8 @@
     extern int scores[NB_JOUEURS_MAX][NB_MANCHE]; // Podium
     extern int compteur_podium;
 
+    extern int current_map;
+
 
 
     
@@ -1034,6 +1036,8 @@ void traiterSTART_GAME(requete_t * req){
 
             start_game = true; 
 
+            sscanf(req->optReq, "%d", &current_map);
+
         }
         else{
             printMulticast("START_GAME ignoré (session obsolète)\n"); 
@@ -1230,6 +1234,8 @@ void traiterSTART_NEXT_ROUND(requete_t * req){
         if(multicast_actif){
 
             next_round = true; 
+
+            sscanf(req->optReq, "%d", &current_map);
 
         }else{
 

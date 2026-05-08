@@ -4,10 +4,10 @@
 #include "raylib/raylib.h"
 
 
-#define MAX_HEIGHTMAP_DIMENSION 50
+#define MAX_HEIGHTMAP_DIMENSION 60
 #define Y_SCALE 0.5
 
-#define MAX_MAPS 1
+#define MAX_MAPS 3
 
 
 typedef struct {
