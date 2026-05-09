@@ -367,11 +367,11 @@ void updateGAME(){
             envoi_no_ack(start_req_multitoclts);
         }
         // Positionnement initial des balles 
-        ground_info = get_ground_info(maps, maps->start_x, maps->start_z); 
+        ground_info = get_ground_info(&maps[current_map], maps[current_map].start_x, maps[current_map].start_z); 
         printf("\n\n");
 
         for(int i = 0; i < nb_joueurs; i++){
-            init_pos_ball(&(balls[i]), maps->start_x, maps->start_z, ground_info.y);
+            init_pos_ball(&(balls[i]), maps[current_map].start_x, maps[current_map].start_z, ground_info.y);
             printf("Balle [%d] : position : %f;%f;%f\n", i, balls[i].pos.x, balls[i].pos.y, balls[i].pos.z);
         }
 
@@ -401,8 +401,8 @@ void updateGAME(){
     for(int i = 0; i < nb_joueurs; i++){
         double dt = GetFrameTime(); 
         if(!(balls[i].inHole)){
-            update_ball_mov(&(balls[i]), dt, maps); 
-            isInHole(&(balls[i]), maps); 
+            update_ball_mov(&(balls[i]), dt, &maps[current_map]); 
+            isInHole(&(balls[i]), &maps[current_map]); 
         }
     }
 
@@ -420,7 +420,7 @@ void updateGAME(){
             if (index != -1) {
                 if (Vector3Length(balls[index].vel) < 0.01f) {
 
-                    isInHole(&(balls[index]), maps); 
+                    isInHole(&(balls[index]), &maps[current_map]); 
 
                     if (all_balls_in_hole()) {
                         req_send_multi.idReq = START_NEXT_ROUND;
