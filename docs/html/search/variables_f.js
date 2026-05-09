@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['sa_0',['sa',['../client_8c.html#af45731e3d39a1b2330bbf93e9b3de59e',1,'sa:&#160;client.c'],['../update_8c.html#a912b7dd0b0e632b02c868b24dfa5b7d7',1,'sa:&#160;client.c']]],
+  ['sa_5freg_1',['sa_reg',['../client_8c.html#aa95de420da1d4856ec11b333aded7e1c',1,'sa_reg:&#160;client.c'],['../update_8c.html#a2cf871e126d6ef26b2e7717397a995be',1,'sa_reg:&#160;client.c']]],
+  ['sam_2',['sam',['../client_8c.html#aeadd934e2cc978fc622fc1324878d8af',1,'sam:&#160;client.c'],['../update_8c.html#a71049eb57728aa30a6e09551d2eb0512',1,'sam:&#160;client.c']]],
+  ['scores_3',['scores',['../client_8c.html#a033f407c9452992e32e50ed4eea78b62',1,'scores:&#160;client.c'],['../render_8c.html#ac5bfdbe0a5ea3fc85bd390d8b72df87e',1,'scores:&#160;client.c'],['../update_8c.html#ac5bfdbe0a5ea3fc85bd390d8b72df87e',1,'scores:&#160;client.c']]],
+  ['se_4',['se',['../client_8c.html#a99032f27eaf45da350b544c68aa6467c',1,'se:&#160;client.c'],['../server_8c.html#ae1f38f6f4b88e83a1691bde60e163676',1,'se:&#160;server.c'],['../update_8c.html#ae1f38f6f4b88e83a1691bde60e163676',1,'se:&#160;client.c']]],
+  ['set_5fball_5fpos_5fenvoye_5',['set_ball_pos_envoye',['../update_8c.html#a3e8d095d975ca43c1ea428d5ba285d2c',1,'set_ball_pos_envoye:&#160;client.c'],['../client_8c.html#a2bd035a3fd2a675f30bcfc412a236d9d',1,'set_ball_pos_envoye:&#160;client.c'],['../render_8c.html#a3e8d095d975ca43c1ea428d5ba285d2c',1,'set_ball_pos_envoye:&#160;client.c']]],
+  ['shader_6',['shader',['../graphics_8c.html#a1b46c5da1d9da0a437b3f552cf7df434',1,'graphics.c']]],
+  ['shoot_5fdirection_7',['shoot_direction',['../render_8c.html#ad2cbf9e89d09257ce6425070175a7f87',1,'shoot_direction:&#160;client.c'],['../update_8c.html#ad2cbf9e89d09257ce6425070175a7f87',1,'shoot_direction:&#160;client.c'],['../client_8c.html#af8634b973e4200cdcc0d93045a564114',1,'shoot_direction:&#160;client.c']]],
+  ['shoot_5fpuissance_8',['shoot_puissance',['../render_8c.html#adabd61eaf600d3cbe55d31ae3b0a1740',1,'shoot_puissance:&#160;client.c'],['../update_8c.html#adabd61eaf600d3cbe55d31ae3b0a1740',1,'shoot_puissance:&#160;client.c'],['../client_8c.html#a80bfd16db8aef6aebe0770ddc2d046d8',1,'shoot_puissance:&#160;client.c']]],
+  ['sm_9',['sm',['../client_8c.html#a8ad3f698becd820c9b50aedb492b62ec',1,'sm:&#160;client.c'],['../update_8c.html#affbf17370c7184cb8704eee27e205997',1,'sm:&#160;client.c']]],
+  ['start_5fgame_10',['start_game',['../client_8c.html#a8ee53fee55631047c16a3d6838521eab',1,'start_game:&#160;client.c'],['../update_8c.html#a0fdfd5e75d81d3b1b3165ae2287458a9',1,'start_game:&#160;client.c']]],
+  ['start_5freq_5fmultitoclts_11',['start_req_multitoclts',['../client_8c.html#a880c686d28d5e954eac3138c1ecd9978',1,'start_req_multitoclts:&#160;client.c'],['../update_8c.html#ab6b56329d4a8496219226824ff35aaa3',1,'start_req_multitoclts:&#160;client.c']]],
+  ['start_5freqrep_5fclt2app_12',['start_reqrep_clt2app',['../client_8c.html#a6406a99f4f82326d8405f0a41ce92d11',1,'start_reqrep_clt2app:&#160;client.c'],['../update_8c.html#a85c275bdced97c78066166d7da3eaa32',1,'start_reqrep_clt2app:&#160;client.c']]],
+  ['start_5freqrep_5fclt2reg_13',['start_reqrep_clt2reg',['../client_8c.html#a9798504079673dc98ee8686314998118',1,'start_reqrep_clt2reg:&#160;client.c'],['../update_8c.html#afdfd31920738734ffefc138d6e7afdcf',1,'start_reqrep_clt2reg:&#160;client.c']]],
+  ['start_5fthread_5fclt2app_14',['start_thread_clt2app',['../client_8c.html#abb2bd1735ff412ac7795ddbd859189af',1,'start_thread_clt2app:&#160;client.c'],['../update_8c.html#a14601795cbf88fbe7420545d8ce244a8',1,'start_thread_clt2app:&#160;client.c']]],
+  ['start_5fx_15',['start_x',['../structmap__t.html#afc5a65fb83f385fb7dc6e8075d8f5c73',1,'map_t']]],
+  ['start_5fz_16',['start_z',['../structmap__t.html#ab0a04013fed332537010783426d5d1e9',1,'map_t']]],
+  ['startcountdowntime_17',['startcountdowntime',['../client_8c.html#a5d0bcbcec08aacdbd8471203363f13d6',1,'startCountdownTime:&#160;client.c'],['../render_8c.html#ad9a6292bc5af07879b8899fa4a778764',1,'startCountdownTime:&#160;client.c'],['../update_8c.html#ad9a6292bc5af07879b8899fa4a778764',1,'startCountdownTime:&#160;client.c']]]
+];

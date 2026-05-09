@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['traiterdis_5fplayer_0',['traiterDIS_PLAYER',['../dial_8c.html#a3a8260f179fe2c3f62df23b779536508',1,'dial.c']]],
+  ['traiterend_5fgame_1',['traiterEND_GAME',['../dial_8c.html#a70ed8479ff2384974e6ef2aed389006e',1,'dial.c']]],
+  ['traiterend_5fserv_2',['traiterEND_SERV',['../dial_8c.html#a92bf1f8377177e6f55ac5ef49e56495f',1,'dial.c']]],
+  ['traiterget_5fhosts_5flist_3',['traiterGET_HOSTS_LIST',['../dial_8c.html#a02eeda90a10539d540248d31ad24f4ea',1,'dial.c']]],
+  ['traiterget_5fplayer_5ffrom_5fid_4',['traiterGET_PLAYER_FROM_ID',['../dial_8c.html#a88081e7b3acd3ed801794a8974986c85',1,'dial.c']]],
+  ['traiterget_5fplayers_5flist_5',['traiterGET_PLAYERS_LIST',['../dial_8c.html#a266be91fa441c93fc9496afe983f1040',1,'dial.c']]],
+  ['traiterjoin_5fgame_6',['traiterJOIN_GAME',['../dial_8c.html#a130bf86309a14d7ac297e4394d8ffe00',1,'dial.c']]],
+  ['traiterleave_5fgame_7',['traiterLEAVE_GAME',['../dial_8c.html#a0fafacc1e1f1d4d5c090d21bb2b10d55',1,'dial.c']]],
+  ['traiternext_5fplayer_5fto_5fplay_8',['traiterNEXT_PLAYER_TO_PLAY',['../dial_8c.html#a416deb146374e94162bc8979d052e885',1,'dial.c']]],
+  ['traiterreg_5fplayer_9',['traiterREG_PLAYER',['../dial_8c.html#a2959dd814419df75915cf323228bf8dd',1,'dial.c']]],
+  ['traiterset_5fball_5fpos_10',['traiterSET_BALL_POS',['../dial_8c.html#a93e82869b2415faaffc2199ca952d5c9',1,'dial.c']]],
+  ['traiterset_5fball_5fvel_11',['traiterSET_BALL_VEL',['../dial_8c.html#a7953cba1f973af1dfe0aa963fd8dbe8f',1,'dial.c']]],
+  ['traitershoot_12',['traiterSHOOT',['../dial_8c.html#a1425f4ce26d3bdbdbb3ce8967212794f',1,'dial.c']]],
+  ['traiterstart_5fgame_13',['traiterSTART_GAME',['../dial_8c.html#af1a91a0eb7d9670b339393b2aeccabbf',1,'dial.c']]],
+  ['traiterstart_5fnext_5fround_14',['traiterSTART_NEXT_ROUND',['../dial_8c.html#ae7565586d84bd56fc220bccfae76fba8',1,'dial.c']]],
+  ['traiterupdt_5fclient_5fstate_15',['traiterUPDT_CLIENT_STATE',['../dial_8c.html#a8acb0214b920755528095d96485f6b78',1,'dial.c']]],
+  ['trouveruser_16',['trouverUser',['../users_8c.html#a4013c0def6984f01a5a43fb72212809f',1,'users.c']]]
+];

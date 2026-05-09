@@ -1,0 +1,24 @@
+var searchData=
+[
+  ['pause_0',['PAUSE',['../session_8h.html#a04c10e619b22ff247ade9e18e9082fa0',1,'session.h']]],
+  ['pfct_1',['pFct',['../data_8h.html#aff0a816c1aa078dc74b95c5074a14b6c',1,'data.h']]],
+  ['pfctthread_2',['pFctThread',['../dial_8h.html#abf45d33e7548cac6cab52775312d78a1',1,'dial.h']]],
+  ['physic_2ec_3',['physic.c',['../physic_8c.html',1,'']]],
+  ['physic_2eh_4',['physic.h',['../physic_8h.html',1,'']]],
+  ['player_5fdetails_5',['PLAYER_DETAILS',['../reqRep_8h.html#a2f639862a785cb34ba3dac497b602451aec49cdd9639375a7e2cf68626b76ff54',1,'reqRep.h']]],
+  ['players_5flist_6',['PLAYERS_LIST',['../reqRep_8h.html#a2f639862a785cb34ba3dac497b602451a733d59abe5e4da6aa0b564154dc6635d',1,'reqRep.h']]],
+  ['podium_7',['PODIUM',['../update_8h.html#a4edce1ca040716922b6e4a79be4e414da367f0e361b8cc4d838f3493a2e987cff',1,'update.h']]],
+  ['port_5fsrv_5fapp_8',['port_srv_app',['../structuser__t.html#a81315383db502b7853360ed25a5f8c95',1,'user_t::port_srv_app'],['../client_8c.html#ae54cb32ec05997cd21fa21db27a74ce2',1,'PORT_SRV_APP:&#160;client.c'],['../render_8c.html#adbbfb716085fd6a2f3797f0c6655fcd6',1,'PORT_SRV_APP:&#160;client.c'],['../update_8c.html#adbbfb716085fd6a2f3797f0c6655fcd6',1,'PORT_SRV_APP:&#160;client.c']]],
+  ['port_5fsrv_5freg_9',['port_srv_reg',['../update_8c.html#a46e396c377068c513d03e2574c6386cd',1,'PORT_SRV_REG:&#160;client.c'],['../client_8c.html#a38ca8002e2e62c68d0902cdbac4d3db7',1,'PORT_SRV_REG:&#160;client.c']]],
+  ['pos_10',['pos',['../structball__t.html#a92bcc935e73b662a853db7d9c192a9cd',1,'ball_t']]],
+  ['printapp2clt_11',['printApp2Clt',['../dial_8h.html#a8cda3239f02e1dd631f0c3bd65c6520c',1,'dial.h']]],
+  ['printappsrv_12',['printAppSrv',['../dial_8h.html#a0669e8a2ad62277b988ac3e254739ce6',1,'dial.h']]],
+  ['printclt2app_13',['printClt2App',['../dial_8h.html#a5939fbc1695319c490841686014faebc',1,'dial.h']]],
+  ['printihm_14',['printIHM',['../update_8h.html#ad806ebc296486477e66fb28a6fdd6e71',1,'update.h']]],
+  ['printmap_15',['printMap',['../map_8c.html#a967bb6eda631eee91a8773a2fab42f57',1,'map.c']]],
+  ['printmulticast_16',['printMulticast',['../dial_8h.html#a2e53fd2faa87798badba1d3596775135',1,'dial.h']]],
+  ['printreg2clt_17',['printReg2Clt',['../dial_8h.html#a5c4328ca6a55634623efbe875599ce6d',1,'dial.h']]],
+  ['progname_18',['progName',['../data_8c.html#a17d5dbbb1de157faaad1ad109e392987',1,'data.c']]],
+  ['pseudo_19',['pseudo',['../client_8c.html#adaca8400d3e628695be2900bccb789bc',1,'pseudo:&#160;client.c'],['../render_8c.html#a8b3d3330276828355a44aa6d8816e17b',1,'pseudo:&#160;client.c'],['../update_8c.html#a8b3d3330276828355a44aa6d8816e17b',1,'pseudo:&#160;client.c']]],
+  ['pseudo_5fnext_5fplayer_20',['pseudo_next_player',['../client_8c.html#aba42dcf01f09d80389bf7b6c7290adec',1,'pseudo_next_player:&#160;client.c'],['../render_8c.html#aafbeac3f335e3fbabb2728fdaa992640',1,'pseudo_next_player:&#160;client.c'],['../update_8c.html#aafbeac3f335e3fbabb2728fdaa992640',1,'pseudo_next_player:&#160;client.c']]]
+];

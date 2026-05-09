@@ -1,0 +1,27 @@
+digraph "include/users.h"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  Node1 [id="Node000001",label="include/users.h",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Déclaration pour la gestion des utilisateurs (création, identification, état, persistance)"];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="include/graphics.h",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$graphics_8h.html",tooltip="Déclarations pour les graphismes et rendu."];
+  Node2 -> Node3 [id="edge2_Node000002_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="src/client.c",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$client_8c.html",tooltip="Implémentation du client pour le jeu de golf multi-joueur."];
+  Node2 -> Node4 [id="edge3_Node000002_Node000004",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="src/graphics.c",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$graphics_8c.html",tooltip="Gestion des graphismes et rendu 3D avec Raylib."];
+  Node2 -> Node5 [id="edge4_Node000002_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="src/render.c",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$render_8c.html",tooltip="Gestion du rendu des différents états du jeu (LIST, LOBBY, GAME, PODIUM, etc.)"];
+  Node2 -> Node6 [id="edge5_Node000002_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="src/update.c",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$update_8c.html",tooltip="Mise à jour de la logique de jeu selon les états."];
+  Node1 -> Node3 [id="edge6_Node000001_Node000003",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node7 [id="edge7_Node000001_Node000007",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="src/dial.c",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$dial_8c.html",tooltip="Gestion des dialogues réseau entre le client, le serveur d'enregistrement et le serveur applicatif (u..."];
+  Node1 -> Node5 [id="edge8_Node000001_Node000005",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node8 [id="edge9_Node000001_Node000008",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="src/server.c",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$server_8c.html",tooltip="Implémentation du serveur d'enregistrement."];
+  Node1 -> Node6 [id="edge10_Node000001_Node000006",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node9 [id="edge11_Node000001_Node000009",dir="back",color="steelblue1",style="solid",tooltip=" "];
+  Node9 [id="Node000009",label="src/users.c",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$users_8c.html",tooltip="Gestion des utilisateurs (création, identification, état, persistance)"];
+}
