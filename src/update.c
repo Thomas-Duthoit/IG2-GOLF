@@ -1,3 +1,11 @@
+/**
+ * \file update.c
+ * \brief Mise à jour de la logique de jeu selon les états
+ * \author Thomas DUTHOIT && Cloé GREBERT
+ * \date 9 mai 2026
+ * \version 1.0
+ */
+
 #pragma region LIST
 
 #include <pthread.h>
@@ -15,58 +23,64 @@
 #include "render.h"
 #include "update.h"
 
+/*
+*****************************************************************************************
+ *	\noop		D E C L A R A T I O N   DES   V A R I A B L E S    E X T E R N E S
+ */
 
-
+// Requêtes / réponses vers le serveur d'enregistrement
 extern requete_t req_send_clt2reg;
 extern pthread_cond_t end_reqrep_clt2reg;
 extern pthread_cond_t start_reqrep_clt2reg;
 extern pthread_mutex_t MUT_END_REQREP_CLT2REG;
 extern pthread_mutex_t MUT_START_REQREP_CLT2REG;
 
+// Requêtes / réponses vers le serveur applicatif
 extern requete_t req_send_clt2app; 
 extern pthread_cond_t end_reqrep_clt2app; 
 extern pthread_cond_t start_reqrep_clt2app;
 extern pthread_mutex_t MUT_END_REQREP_CLT2APP;
 extern pthread_mutex_t MUT_START_REQREP_CLT2APP;
 
-
+// Démarrage du thread de communication avec le serveur applicatif
 extern pthread_cond_t start_thread_clt2app; 
 extern pthread_mutex_t MUT_START_THREAD_CLT2APP; 
 
-
+// Allocation du port du serveur applicatif
 extern pthread_cond_t cond_port_srv_app_alloue;
 extern pthread_mutex_t MUT_COND_PORT_SRV_APP_ALLOUE;
 
+// Requêtes multicast entre clients
 extern requete_t req_send_multi;
 extern pthread_cond_t end_req_multitoclts;
 extern pthread_cond_t start_req_multitoclts;
 extern pthread_mutex_t MUT_END_REQ_MUTLITOCLTS;
 extern pthread_mutex_t MUT_START_REQ_MUTLITOCLTS;
 
+// Flags de connexion
 extern bool connexion_serv_reg_ok;
 extern bool connexion_serv_app_ok;
-
 extern bool deconnexion_serv_app; 
 extern bool thread_app_running;
 extern bool multicast_actif; 
 
+// Flags de jeu
 extern bool start_game; 
 extern bool end_game; 
 extern bool next_player; 
 extern bool next_round; 
-
 extern bool balls_initialized; 
 
+// Données de jeu
 extern int current_player_index; 
-
 extern int compteur_podium; 
 extern bool change_game_state; 
 extern double timePodium; 
-
 extern double startCountdownTime;
 extern double endScreenTime;
 extern double nextCountdownTime; 
 
+// Configuration réseau
 extern short PORT_SRV_REG;
 extern short PORT_SRV_APP;
 extern char INTERFACE[50]; 
@@ -74,6 +88,7 @@ extern char IP_REG[100];
 extern char IP_SERVICE[100];
 extern char IP_MULTICAST[100];
 
+// Données utilisateurs
 extern char buff_pseudos_hotes[TAILLE_OPT];
 extern char buff_info_joueur[TAILLE_OPT];
 extern char buff_pseudos_players[TAILLE_OPT];
@@ -81,36 +96,46 @@ extern users_t hotes;
 extern users_t clients_app; 
 extern users_t clients; 
 
+// Balles
 extern ball_t balls[MAX_USERS];
 extern int my_ball_index;  // -1 = pas trouvé, sinon index
 
+// Hôte du serveur applicatif rejoint
 extern user_t hote_serv_app;  
 
+// Sockets
 extern socket_t sa_reg;
 extern socket_t se;
 extern socket_t sa;
 extern socket_t sam;  // socket d'appel multicast
 extern socket_t sm;  // socket multicast
 
+// État du jeu
 extern game_state_t game_state; 
 extern name_t pseudo;
 extern name_t pseudo_next_player; 
 
+// Cartes
 extern map_t maps[MAX_MAPS];
 extern int current_map;
 
+// Caméra et tir
 extern cam_mode_t camera_mode;
 extern bool aiming;  // en train de viser pour tirer
 extern float shoot_puissance;
 extern Vector3 shoot_direction;
 extern Vector2 mouse_delta;
-
 extern bool can_shoot;  // on peut tirer ou non
-
 extern bool set_ball_pos_envoye;
 
+// Podium
 extern int scores[NB_JOUEURS_MAX][NB_MANCHE]; // Podium
 
+
+/*
+*****************************************************************************************
+ *	\noop		P R O T O T Y P E S   DES   F O N C T I O N S   I N T E R N E S
+ */
 
 // Fonction interne 
 void checkNbPlayers(); 
@@ -121,7 +146,15 @@ bool all_balls_in_hole();
 int idx_my_ball(); 
 void shoot(Vector3 dir, float power); 
 
+/*
+*****************************************************************************************
+ *	\noop		I M P L E M E N T A T I O N   DES   F O N C T I O N S
+ */
 
+/**
+ * \fn void updateLIST()
+ * \brief Met à jour la logique de l'état LIST (liste des hôtes disponibles)
+ */
 void updateLIST(){
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -175,6 +208,10 @@ void updateLIST(){
 
 #pragma region LOBBY
 
+/**
+ * \fn void updateLOBBY()
+ * \brief Met à jour la logique de l'état LOBBY pour l'hôte (gestion des joueurs et démarrage de partie)
+ */
 void updateLOBBY(){
 
     checkNbPlayers(); 
@@ -240,6 +277,10 @@ void updateLOBBY(){
 
 #pragma region LOBBY Client
 
+/**
+ * \fn void updateLOBBYClt()
+ * \brief Met à jour la logique de l'état LOBBY pour le client (gestion déconnexion et quitter)
+ */
 void updateLOBBYClt(){
     requete_t req; 
 
@@ -301,6 +342,10 @@ void updateLOBBYClt(){
 
 #pragma region GAME
 
+/**
+ * \fn void updateGAME()
+ * \brief Met à jour la logique de l'état GAME (physique des balles, tir, passage au joueur suivant)
+ */
 void updateGAME(){
 
     int compteur = 0; 
@@ -585,6 +630,10 @@ void updateGAME(){
 
 #pragma region END
 
+/**
+ * \fn void updateEND()
+ * \brief Met à jour la logique de l'état END (retour au lobby après la fin de partie)
+ */
 void updateEND(){
 
     if (GetTime() - endScreenTime > 1) {
@@ -613,6 +662,10 @@ void updateEND(){
 #pragma region FONCTION INTERNE
 
 
+/**
+ * \fn void checkNbPlayers()
+ * \brief Vérifie le nombre de joueurs connectés et met à jour l'état de l'hôte auprès du serveur d'enregistrement
+ */
 void checkNbPlayers(){
 
     static int last_nb_clients = -1; 
@@ -641,6 +694,10 @@ void checkNbPlayers(){
 
 
 
+/**
+ * \fn void resetLIST() 
+ * \brief Réinitialise la liste des hôtes disponibles
+ */
 void resetLIST(){
     hotes.nbUsers = 0;
     for (int i = 0; i < MAX_USERS; i++)
@@ -649,6 +706,13 @@ void resetLIST(){
 
 
 
+/**
+ * \fn bool connecterClt2App(char * ip, short port)
+ * \brief Connecte le client à un serveur applicatif et démarre les threads de communication associés
+ * \param ip   Adresse IP du serveur applicatif
+ * \param port Port du serveur applicatif
+ * \return true si la connexion a réussi, false sinon
+ */
 bool connecterClt2App(char * ip, short port) {
     printIHM("Creation du thread de comm \"dialClt2App\" ...\n");
 
@@ -706,6 +770,12 @@ bool connecterClt2App(char * ip, short port) {
 
 
 
+/**
+ * \fn void * requetes_recurrentes_app_1s(void * arg)
+ * \brief Fonction de thread pour les requêtes récurrentes vers le serveur applicatif (toutes les secondes)
+ * \param arg Argument non utilisé lors de l'appel du thread
+ * \return NULL
+ */
 void * requetes_recurrentes_app_1s(void * arg) {
 
     
@@ -741,6 +811,11 @@ void * requetes_recurrentes_app_1s(void * arg) {
 }
 
 
+/**
+ * \fn bool all_balls_in_hole()
+ * \brief Vérifie si toutes les balles des joueurs sont dans le trou
+ * \return true si toutes les balles sont dans le trou, false sinon
+ */
 bool all_balls_in_hole(){
     int nbUsers = estHote() ? clients_app.nbUsers : clients.nbUsers; 
 
@@ -755,6 +830,11 @@ bool all_balls_in_hole(){
 }
 
 
+/**
+ * \fn int idx_my_ball()
+ * \brief Recherche l'index de la balle du joueur courant dans le tableau des balles
+ * \return Index de la balle dans le tableau balls, ou -1 si non trouvé
+ */
 int idx_my_ball() {
     if (estHote()) {
         for (int i = 0; i < clients_app.nbUsers; i++) {
@@ -771,6 +851,12 @@ int idx_my_ball() {
 
 
 
+/**
+ * \fn void shoot (Vector3 dir, float power)
+ * \brief Envoie un tir au serveur applicatif
+ * \param dir   Direction du tir (vecteur normalisé)
+ * \param power Puissance du tir
+ */
 void shoot(Vector3 dir, float power) {
     if (!connexion_serv_app_ok) return;
 

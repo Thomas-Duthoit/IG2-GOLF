@@ -1,7 +1,7 @@
 /**
  *	\file		data.c
  *	\brief		Implémentation de la couche Data Representation
- *	\author		Thomas DUTHOIT
+ *	\author		Thomas DUTHOIT && Cloé GREBERT
  *	\date		10 mars 2026
  *	\version	1.0
  */

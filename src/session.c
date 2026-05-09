@@ -1,7 +1,7 @@
 /**
  *	\file		session.c
  *	\brief		Code de la couche Session
- *	\author		Thomas DUTHOIT
+ *	\author		Thomas DUTHOIT && Cloé GREBERT
  *	\date		10 mars 2026
  *	\version	1.0
  */

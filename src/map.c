@@ -1,3 +1,11 @@
+/**
+ * \file map.c
+ * \brief Gestion du chargement et du rendu des cartes
+ * \author Thomas DUTHOIT && Cloé GREBERT
+ * \date 9 mai 2026
+ * \version 1.0
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,17 +13,38 @@
 #include "map.h"
 #include "raylib/raymath.h"
 
+/*
+*****************************************************************************************
+ *	\noop		D E F I N I T I O N   DES   M A C R O S
+ */
 
+/**
+ * \def printMap(fmt, ...)
+ * \brief Macro d'affichage préfixée "[MAP]" pour les messages de chargement de carte
+ */
 #define printMap(fmt, ...) printf("\x1b[1;37;42mMAP\x1b[0m] " fmt, ##__VA_ARGS__)
 
 
-
+/*
+*****************************************************************************************
+ *	\noop		P R O T O T Y P E S   DES   F O N C T I O N S   I N T E R N E S
+ */
 
 void box_blur(map_t *map);
 void gen_mesh_map(map_t * map);
 
+/*
+*****************************************************************************************
+ *	\noop		I M P L E M E N T A T I O N   DES   F O N C T I O N S
+ */
 
 
+/**
+ * \fn void load_map(map_t * map, char * path)
+ * \brief Charge une carte depuis un fichier texte et génère son mesh 3D
+ * \param map  Pointeur vers la structure de carte à remplir
+ * \param path Chemin du fichier de carte
+ */
 void load_map(map_t * map, char * path) {
     
     printMap("Ouverture de %s\n", path);
@@ -92,6 +121,12 @@ void load_map(map_t * map, char * path) {
 }
 
 
+/**
+ * \fn Model get_map_model(map_t * map) 
+ * \brief Upload le mesh de la carte sur le GPU et retourne le modèle Raylib associé
+ * \param map Pointeur vers la structure de carte
+ * \return Modèle 3D Raylib prêt à être rendu
+ */
 Model get_map_model(map_t * map) {
     UploadMesh(&(map->mesh), false);
     return LoadModelFromMesh(map->mesh);
@@ -100,6 +135,11 @@ Model get_map_model(map_t * map) {
 
 
 
+/**
+ * \fn void gen_mesh_map(map_t * map)
+ * \brief Génère le mesh 3D de la carte à partir de la heightmap (triangles sans partage de sommets)
+ * \param map Pointeur vers la structure de carte
+ */
 void gen_mesh_map(map_t * map) {
     int numQuads = (map->width - 1) * (map->height - 1);
     int triangleCount = numQuads * 2;
@@ -166,6 +206,15 @@ void gen_mesh_map(map_t * map) {
 
 
 
+/**
+ * \fn ground_info_t get_ground_info(map_t *map, float x, float z)
+ * \brief Calcule les informations du sol (hauteur, gradient, normale) à une position (x, z) donnée
+ *        par interpolation bilinéaire sur la heightmap
+ * \param map Pointeur vers la structure de carte
+ * \param x   Coordonnée X dans le repère de la carte
+ * \param z   Coordonnée Z dans le repère de la carte
+ * \return Structure ground_info_t contenant la hauteur, les gradients et la normale au sol
+ */
 ground_info_t get_ground_info(map_t *map, float x, float z) {
     ground_info_t info = { 0 };
     info.x = x;
@@ -213,6 +262,11 @@ ground_info_t get_ground_info(map_t *map, float x, float z) {
 
 
 
+/**
+ * \fn void box_blur(map_t *map)
+ * \brief Applique un filtre de flou boîte (box blur) 3×3 sur la heightmap pour adoucir le terrain
+ * \param map Pointeur vers la structure de carte
+ */
 void box_blur(map_t *map) {
     float temp[map->height][map->width];
 
@@ -259,6 +313,16 @@ void box_blur(map_t *map) {
 
 
 
+/**
+ * \fn void add_quad(Vector3 p1, Vector3 p2, float base, float* v, float* n, int* idx)
+ * \brief Ajoute un quad (2 triangles) aux tableaux de vertices et normales d'un mesh de bordure
+ * \param p1       Premier sommet supérieur du quad
+ * \param p2       Second sommet supérieur du quad
+ * \param base     Hauteur de la base inférieure du quad
+ * \param v        Tableau des vertices destination
+ * \param n        Tableau des normales destination
+ * \param idx      Pointeur vers l'index courant dans les tableaux (incrémenté en sortie)
+ */
 void add_quad(Vector3 p1, Vector3 p2, float base, float* v, float* n, int* idx) {
     Vector3 p1_low = { p1.x, base, p1.z };
     Vector3 p2_low = { p2.x, base, p2.z };
@@ -297,6 +361,13 @@ void add_quad(Vector3 p1, Vector3 p2, float base, float* v, float* n, int* idx) 
 
 
 
+/**
+ * \fn Mesh gen_map_borders(map_t *map, float baseHeight)
+ * \brief Génère le mesh des bordures de la carte (murs sur les 4 côtés de la heightmap)
+ * \param map        Pointeur vers la structure de carte
+ * \param baseHeight Hauteur de la base inférieure des bordures
+ * \return Mesh Raylib uploadé sur le GPU, prêt à être utilisé dans un modèle
+ */
 Mesh gen_map_borders(map_t *map, float baseHeight) {
     // Il y a (W-1 + H-1 + W-1 + H-1) segments sur le tour
     int edgeSegments = (map->width - 1) * 2 + (map->height - 1) * 2;
@@ -346,6 +417,14 @@ Mesh gen_map_borders(map_t *map, float baseHeight) {
 
 
 
+/**
+ * \fn void render_map(Model water_model, Model map_model, Model border_model, map_t * map)
+ * \brief Dessine la carte complète : terrain, bordures, trou avec drapeau et plan d'eau
+ * \param water_model  Modèle 3D du plan d'eau
+ * \param map_model    Modèle 3D du terrain
+ * \param border_model Modèle 3D des bordures
+ * \param map          Pointeur vers la structure de carte (pour les positions du trou et de l'eau)
+ */
 void render_map(Model water_model, Model map_model, Model border_model, map_t * map) {
     float waterHeight = -2.0f;
 

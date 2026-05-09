@@ -1,3 +1,13 @@
+/**
+ * \file dial.c
+ * \brief Gestion des dialogues réseau entre le client, le serveur d'enregistrement
+ *        et le serveur applicatif (unicast et multicast)
+ * \author Thomas DUTHOIT && Cloé GREBERT
+ * \date 9 mai 2026
+ * \version 1.0
+ */
+
+
 #include <stdbool.h>
 #include <string.h>
 #include <pthread.h>
@@ -8,13 +18,23 @@
 #include "reqRep.h"
 #include "physic.h"
 
+/*
+*****************************************************************************************
+ *	\noop		D E C L A R A T I O N   DES   V A R I A B L E S    E X T E R N E S
+ */
+
+
 #ifdef CLIENT
 
     //#include "update.h"
 
+    /**
+     * \def NB_MANCHE
+     * \brief Nombre de manche par partie
+     */
     #define NB_MANCHE 3
 
-
+    // Requêtes / réponses vers le serveur d'enregistrement
     extern requete_t req_send_clt2reg;
     extern char buff_pseudos_hotes[TAILLE_OPT];
     extern pthread_cond_t end_reqrep_clt2reg;
@@ -22,50 +42,58 @@
     extern pthread_mutex_t MUT_START_REQREP_CLT2REG;
     extern char buff_info_joueur[TAILLE_OPT];
 
+    // Liste des clients connectés au serveur applicatif
     extern users_t clients_app; 
 
-
+    // Requêtes / réponses vers le serveur applicatif
     extern requete_t req_send_clt2app; 
     extern pthread_cond_t end_reqrep_clt2app; 
     extern pthread_cond_t start_reqrep_clt2app; 
     extern pthread_mutex_t MUT_START_REQREP_CLT2APP; 
 
+    // Démarrage du thread de communication avec le serveur applicatif
     extern pthread_cond_t start_thread_clt2app; 
     extern pthread_mutex_t MUT_START_THREAD_CLT2APP; 
 
+    // Requêtes multicast entre clients
     extern requete_t req_send_multi;
     extern pthread_cond_t end_req_multitoclts;
     extern pthread_cond_t start_req_multitoclts;
     extern pthread_mutex_t MUT_START_REQ_MUTLITOCLTS;
 
+    // Flags de connexion
     extern bool connexion_serv_reg_ok;
     extern bool connexion_serv_app_ok;
-
     extern bool deconnexion_serv_app; 
     extern char buff_pseudos_players[TAILLE_OPT];
-
     extern bool multicast_actif; 
 
+    // Flags de jeu
     extern bool start_game; 
     extern bool end_game; 
     extern bool next_round; 
 
+    // Tour de jeu
     extern name_t pseudo_next_player; 
     extern bool next_player; 
 
+    // Balles et joueurs
     extern ball_t balls[MAX_USERS];
     extern users_t clients;
 
+    // Identité du joueur courant
     extern name_t pseudo;
     extern user_t hote_serv_app;  
 
+    // Tir
     extern bool can_shoot;  // on peut tirer ou non
-
     extern bool set_ball_pos_envoye;
 
+    // Podium
     extern int scores[NB_JOUEURS_MAX][NB_MANCHE]; // Podium
     extern int compteur_podium;
 
+    // Carte courante
     extern int current_map;
 
 
@@ -78,29 +106,40 @@
 #endif
 
 #ifdef CLIENT
+    /**
+     * \def estHote()
+     * \brief Renvoie vrai si le joueur courant est l'hôte du serveur applicatif
+     */
     #define estHote() (strcmp(hote_serv_app.name, pseudo) == 0)
 #endif
 
 
-//TODO: Changer le prototype des fonct reponse_t * rep, socket_t * sd);
+/*
+*****************************************************************************************
+ *	\noop		P R O T O T Y P E S   DES   F O N C T I O N S   I N T E R N E S
+ */
 
+// Aiguillages
 void switchReg2Clt(requete_t * req, reponse_t * rep, socket_t * sd); 
 void switchClt2Reg(reponse_t rep);
 void switchApp2Clt(requete_t * req, reponse_t * rep); 
 void switchClt2App(requete_t * req, reponse_t * rep); 
 void switchRecvFromApp(requete_t * req);
 
+// Traitements serveur d'enregistrement
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep); 
 void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep); 
 void traiterDIS_PLAYER(requete_t * req, reponse_t * rep);
 void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep);
 void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd);
 
+// Traitements serveur applicatif (requêtes client → serveur)
 void traiterJOIN_GAME(requete_t * req, reponse_t * rep); 
 void traiterGET_PLAYERS_LIST(requete_t * req, reponse_t * rep); 
 void traiterLEAVE_GAME(requete_t * req, reponse_t * rep); 
 void traiterSHOOT(requete_t * req, reponse_t * rep); 
 
+// Traitements multicast (serveur applicatif → clients)
 void traiterSTART_GAME(requete_t * req); 
 void traiterSET_BALL_VEL(requete_t * req); 
 void traiterSET_BALL_POS(requete_t * req); 
@@ -110,12 +149,23 @@ void traiterEND_GAME(requete_t * req);
 void traiterEND_SERV(requete_t * req); 
 
 
+/*
+*****************************************************************************************
+ *	\noop		IMPLEMENTATION   DES   FONCTIONS   I N T E R N E S
+ */
 
 
 //  --------------------------------------- SERVEUR D'ENREGISTREMENT | CLIENT -----------------------------
 
 #pragma region DIALREG2CLT
 
+/**
+ * \fn void * dialReg2Clt(socket_t * sd)
+ * \brief Fonction de thread gérant le dialogue du serveur d'enregistrement vers un client
+ *        (réception des requêtes, aiguillage, envoi des réponses)
+ * \param sd Pointeur vers la socket de dialogue avec le client
+ * \return NULL
+ */
 void * dialReg2Clt(socket_t * sd) {
 
     requete_t req;  
@@ -151,6 +201,14 @@ void * dialReg2Clt(socket_t * sd) {
 
     #pragma region SWITCH REG
 // ------------------------------ PARTIE SWITCH -----------------------------------------
+
+/**
+ * \fn void switchReg2Clt(requete_t * req, reponse_t * rep, socket_t * sd)
+ * \brief Aiguille la requête reçue du client vers le traitement correspondant (côté serveur d'enregistrement)
+ * \param req Pointeur vers la requête reçue
+ * \param rep Pointeur vers la réponse à remplir
+ * \param sd  Pointeur vers la socket de dialogue
+ */
 
 void switchReg2Clt(requete_t * req, reponse_t * rep, socket_t * sd){
     switch(req->idReq) {
@@ -214,6 +272,13 @@ void switchReg2Clt(requete_t * req, reponse_t * rep, socket_t * sd){
     #pragma region TRAITEMENT REG
 // ------------------------------ TRAITEMENT SERVEUR ENREGISTREMENT -----------------------------------------
 
+/**
+ * \fn void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd)
+ * \brief Traite la requête d'enregistrement d'un joueur (REG_PLAYER)
+ * \param req Pointeur vers la requête contenant pseudo, IP et port
+ * \param rep Pointeur vers la réponse (OK_REG_SERV ou ERR_REG_SERV)
+ * \param sd  Pointeur vers la socket de dialogue
+ */
 
 void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd) {
     name_t username; 
@@ -251,6 +316,12 @@ void traiterREG_PLAYER(requete_t * req, reponse_t * rep, socket_t * sd) {
 }
 
 
+/**
+ * \fn void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep)
+ * \brief Traite la requête de mise à jour de l'état d'un joueur (UPDT_CLIENT_STATE)
+ * \param req Pointeur vers la requête contenant pseudo et nouvel état
+ * \param rep Pointeur vers la réponse (OK_REG_SERV ou ERR_REG_SERV)
+ */
 
 void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
     name_t username; 
@@ -294,6 +365,12 @@ void traiterUPDT_CLIENT_STATE(requete_t * req, reponse_t * rep){
 
 
 
+/**
+ * \fn void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep)
+ * \brief Traite la requête de récupération de la liste des hôtes disponibles (GET_HOSTS_LIST)
+ * \param req Pointeur vers la requête (options non utilisées)
+ * \param rep Pointeur vers la réponse contenant la liste des pseudos hôtes séparés par ':'
+ */
 
 void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep){
     char * listPseudo = (char *)malloc(sizeof(char)*(MAX_NAME+1)*MAX_USERS); 
@@ -314,7 +391,12 @@ void traiterGET_HOSTS_LIST(requete_t * req, reponse_t * rep){
 
 
 
-
+/**
+ * \fn void traiterDIS_PLAYER(requete_t * req, reponse_t * rep)
+ * \brief Traite la requête de déconnexion d'un joueur (DIS_PLAYER)
+ * \param req Pointeur vers la requête contenant le pseudo du joueur
+ * \param rep Pointeur vers la réponse (OK_REG_SERV ou ERR_REG_SERV)
+ */
 void traiterDIS_PLAYER(requete_t * req, reponse_t * rep){
     int index = -1;  
 
@@ -345,6 +427,12 @@ void traiterDIS_PLAYER(requete_t * req, reponse_t * rep){
     }
 }
 
+/**
+ * \fn void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep)
+ * \brief Traite la requête de récupération des détails d'un joueur par son pseudo (GET_PLAYER_FROM_ID)
+ * \param req Pointeur vers la requête contenant le pseudo du joueur
+ * \param rep Pointeur vers la réponse contenant état, IP et port du joueur (ou ERR_REG_SERV)
+ */
 
 void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep){
     name_t pseudo; 
@@ -400,6 +488,13 @@ void traiterGET_PLAYER_FROM_ID(requete_t * req, reponse_t * rep){
 // -------------------------------------------------------------------------------------------------------
 
 #pragma region DIALCLT2REG
+/**
+ * \fn void * dialClt2Reg(socket_t * sa)
+ * \brief Fonction de thread gérant le dialogue du client vers le serveur d'enregistrement
+ *        (attente de signal, envoi de requête, réception de réponse)
+ * \param sa Pointeur vers la socket d'appel vers le serveur d'enregistrement
+ * \return NULL
+ */
 
 void * dialClt2Reg(socket_t * sa) {
 
@@ -448,6 +543,11 @@ void * dialClt2Reg(socket_t * sa) {
 
  #pragma region SWITCH CLT/REG
 // ------------------------------ PARTIE SWITCH -----------------------------------------
+/**
+ * \fn void switchClt2Reg(reponse_t rep)
+ * \brief Aiguille la réponse reçue du serveur d'enregistrement et met à jour les buffers client
+ * \param rep Réponse reçue du serveur d'enregistrement
+ */
 
 void switchClt2Reg(reponse_t rep){
 
@@ -506,6 +606,13 @@ void switchClt2Reg(reponse_t rep){
 //  --------------------------------------- SERVEUR D'APPLICATION | CLIENT -----------------------------
 
 #pragma region DIALAPP2CLT
+/**
+ * \fn void * dialApp2Clt(socket_t * sd)
+ * \brief Fonction de thread gérant le dialogue du serveur applicatif vers un client
+ *        (réception des requêtes client, aiguillage, envoi des réponses)
+ * \param sd Pointeur vers la socket de dialogue avec le client
+ * \return NULL
+ */
 
 void * dialApp2Clt(socket_t * sd) {
     
@@ -545,6 +652,12 @@ void * dialApp2Clt(socket_t * sd) {
 
  #pragma region SWITCH APP
 // ------------------------------ PARTIE SWITCH -----------------------------------------
+/**
+ * \fn void switchApp2Clt(requete_t * req, reponse_t * rep)
+ * \brief Aiguille la requête reçue d'un client vers le traitement correspondant (côté serveur applicatif)
+ * \param req Pointeur vers la requête reçue
+ * \param rep Pointeur vers la réponse à remplir
+ */
 
 void switchApp2Clt(requete_t * req, reponse_t * rep){
 
@@ -595,6 +708,13 @@ void switchApp2Clt(requete_t * req, reponse_t * rep){
 
     #pragma region TRAITEMENT APP
 
+/**
+ * \fn void traiterJOIN_GAME(requete_t * req, reponse_t * rep)
+ * \brief Traite la requête d'un joueur souhaitant rejoindre la partie (JOIN_GAME)
+ * \param req Pointeur vers la requête contenant le pseudo du joueur
+ * \param rep Pointeur vers la réponse (OK_APP_SERV si accepté, NOK_APP_SERV si partie pleine)
+ */
+
 void traiterJOIN_GAME(requete_t * req, reponse_t * rep){
     name_t username; 
 
@@ -627,6 +747,12 @@ void traiterJOIN_GAME(requete_t * req, reponse_t * rep){
 }
 
 
+/**
+ * \fn void traiterGET_PLAYERS_LIST(requete_t * req, reponse_t * rep)
+ * \brief Traite la requête de récupération de la liste des joueurs de la partie (GET_PLAYERS_LIST)
+ * \param req Pointeur vers la requête (options non utilisées)
+ * \param rep Pointeur vers la réponse contenant la liste des pseudos séparés par ':'
+ */
 
 void traiterGET_PLAYERS_LIST(requete_t * req, reponse_t * rep){
     char * listClient = (char *)malloc(sizeof(char)*(MAX_NAME+1)*MAX_USERS);
@@ -665,7 +791,13 @@ void traiterGET_PLAYERS_LIST(requete_t * req, reponse_t * rep){
 
 
 
-
+/**
+ * \fn void traiterLEAVE_GAME(requete_t * req, reponse_t * rep)
+ * \brief Traite la requête de départ d'un joueur de la partie (LEAVE_GAME)
+ *        Décale les entrées suivantes dans le tableau pour combler le trou
+ * \param req Pointeur vers la requête contenant le pseudo du joueur quittant
+ * \param rep Pointeur vers la réponse (OK_APP_SERV ou NOK_APP_SERV)
+ */
 void traiterLEAVE_GAME(requete_t * req, reponse_t * rep){
     name_t username; 
     int flag = 0; 
@@ -713,6 +845,13 @@ void traiterLEAVE_GAME(requete_t * req, reponse_t * rep){
 }
 
 
+/**
+ * \fn void traiterSHOOT(requete_t * req, reponse_t * rep)
+ * \brief Traite la requête de tir d'un joueur (SHOOT)
+ *        Applique la vélocité à la balle et diffuse la mise à jour en multicast
+ * \param req Pointeur vers la requête contenant pseudo, direction (dx, dy, dz) et puissance
+ * \param rep Pointeur vers la réponse (OK_APP_SERV si joueur trouvé)
+ */
 
 void traiterSHOOT(requete_t * req, reponse_t * rep){
     #ifdef CLIENT
@@ -778,6 +917,14 @@ void traiterSHOOT(requete_t * req, reponse_t * rep){
 
 #pragma region DIALCLT2APP
 
+/**
+ * \fn void * dialClt2App(socket_t * sa)
+ * \brief Fonction de thread gérant le dialogue du client vers le serveur applicatif
+ *        (attente de signal, envoi de requête, réception de réponse)
+ * \param sa Pointeur vers la socket d'appel vers le serveur applicatif
+ * \return NULL
+ */
+
 void * dialClt2App(socket_t * sa) {  // adrSrvApp = "port:IP"
 
     requete_t req;
@@ -837,6 +984,12 @@ void * dialClt2App(socket_t * sa) {  // adrSrvApp = "port:IP"
 
  #pragma region SWITCH CLT2APP
 // ------------------------------ PARTIE SWITCH -----------------------------------------
+/**
+ * \fn void switchClt2App(requete_t * req, reponse_t * rep)
+ * \brief Aiguille la réponse reçue du serveur applicatif et met à jour les buffers client
+ * \param req Pointeur vers la requête envoyée (non utilisée directement ici)
+ * \param rep Pointeur vers la réponse reçue du serveur applicatif
+ */
 
 void switchClt2App(requete_t * req, reponse_t * rep){
 
@@ -894,6 +1047,13 @@ void switchClt2App(requete_t * req, reponse_t * rep){
 
 
 #pragma region MULTISENDTOCLTS
+/**
+ * \fn void * multiSendToClts(socket_t * sm) 
+ * \brief Fonction de thread envoyant les requêtes de l'hôte aux autres clients en multicast
+ *        (attente de signal, envoi UDP multicast, signal de fin si ACK attendu)
+ * \param sm Pointeur vers la socket multicast d'envoi
+ * \return NULL
+ */
 
 void * multiSendToClts(socket_t * sm) {
     requete_t req;
@@ -939,6 +1099,13 @@ void * multiSendToClts(socket_t * sm) {
 //  ------------------------------------------------------------------------------------------------------
 
 #pragma region MULTIRECVFROMAPP
+/**
+ * \fn void * multiRecvFromApp(socket_t * sam)
+ * \brief Fonction de thread recevant les messages multicast du serveur applicatif
+ *        et les aiguillant vers le traitement correspondant
+ * \param sam Pointeur vers la socket multicast de réception
+ * \return NULL
+ */
 
 void * multiRecvFromApp(socket_t * sam) {
     requete_t req;  
@@ -971,6 +1138,12 @@ void * multiRecvFromApp(socket_t * sam) {
 //  ------------------------------------------------------------------------------------------------------
 
 #pragma region SWITCHMULTICAST
+
+/**
+ * \fn void switchRecvFromApp(requete_t * req)
+ * \brief Aiguille la requête multicast reçue du serveur applicatif vers le traitement correspondant
+ * \param req Pointeur vers la requête multicast reçue
+ */
 
 void switchRecvFromApp(requete_t * req) {
 
@@ -1027,6 +1200,12 @@ void switchRecvFromApp(requete_t * req) {
 
     #pragma region TRAITEMENT APP MULTICAST
 
+/**
+ * \fn void traiterSTART_GAME(requete_t * req)
+ * \brief Traite le signal de démarrage de partie reçu en multicast (START_GAME)
+ *        Met à jour l'index de la carte à jouer
+ * \param req Pointeur vers la requête contenant l'index de la carte
+ */
 
 void traiterSTART_GAME(requete_t * req){
 
@@ -1048,6 +1227,12 @@ void traiterSTART_GAME(requete_t * req){
 
 }
 
+/**
+ * \fn void traiterSET_BALL_VEL(requete_t * req)
+ * \brief Traite la mise à jour de la vélocité d'une balle reçue en multicast (SET_BALL_VEL)
+ *        Identifie la balle par le pseudo du joueur et applique la nouvelle vélocité
+ * \param req Pointeur vers la requête contenant pseudo, vx, vy, vz
+ */
 
 void traiterSET_BALL_VEL(requete_t * req){
 
@@ -1102,6 +1287,12 @@ void traiterSET_BALL_VEL(requete_t * req){
 
 }
 
+/**
+ * \fn void traiterSET_BALL_POS(requete_t * req)
+ * \brief Traite la mise à jour de la position d'une balle reçue en multicast (SET_BALL_POS)
+ *        Identifie la balle par le pseudo, applique la position et vérifie si toutes les balles sont dans le trou
+ * \param req Pointeur vers la requête contenant pseudo, x, y, z et flag inHole
+ */
 
 void traiterSET_BALL_POS(requete_t * req){
     
@@ -1181,6 +1372,13 @@ void traiterSET_BALL_POS(requete_t * req){
 }
 
 
+/**
+ * \fn void traiterNEXT_PLAYER_TO_PLAY(requete_t * req)
+ * \brief Traite la notification du prochain joueur à jouer reçue en multicast (NEXT_PLAYER_TO_PLAY)
+ *        Met à jour le pseudo du prochain joueur, autorise le tir si c'est notre tour et incrémente le score
+ * \param req Pointeur vers la requête contenant le pseudo du prochain joueur
+ */
+
 void traiterNEXT_PLAYER_TO_PLAY(requete_t * req){
     
     #ifdef CLIENT 
@@ -1226,6 +1424,12 @@ void traiterNEXT_PLAYER_TO_PLAY(requete_t * req){
     
 }
 
+/**
+ * \fn void traiterSTART_NEXT_ROUND(requete_t * req)
+ * \brief Traite le signal de passage à la manche suivante reçu en multicast (START_NEXT_ROUND)
+ *        Met à jour l'index de la prochaine carte
+ * \param req Pointeur vers la requête contenant l'index de la carte suivante
+ */
 
 void traiterSTART_NEXT_ROUND(requete_t * req){
 
@@ -1248,6 +1452,12 @@ void traiterSTART_NEXT_ROUND(requete_t * req){
     
 }
 
+/**
+ * \fn void traiterEND_GAME(requete_t * req)
+ * \brief Traite le signal de fin de partie reçu en multicast (END_GAME)
+ * \param req Pointeur vers la requête (options non utilisées)
+ */
+
 void traiterEND_GAME(requete_t * req){
 
     #ifdef CLIENT
@@ -1262,6 +1472,12 @@ void traiterEND_GAME(requete_t * req){
     #endif 
 
 }
+
+/**
+ * \fn void traiterEND_SERV(requete_t * req)
+ * \brief Traite le signal de fermeture du serveur applicatif reçu en multicast (END_SERV)
+ * \param req Pointeur vers la requête (options non utilisées)
+ */
 
 void traiterEND_SERV(requete_t * req){
 

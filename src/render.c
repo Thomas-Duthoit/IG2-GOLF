@@ -1,3 +1,11 @@
+/**
+ * \file render.c
+ * \brief Gestion du rendu des différents états du jeu (LIST, LOBBY, GAME, PODIUM, etc.)
+ * \author Thomas DUTHOIT && Cloé GREBERT
+ * \date 9 mai 2026
+ * \version 1.0
+ */
+
 #include <raylib/raylib.h>
 #include "users.h"
 #include "update.h"
@@ -5,48 +13,68 @@
 #include "dial.h"
 #include "graphics.h"
 
+/*
+*****************************************************************************************
+ *	\noop		D E C L A R A T I O N   DES   V A R I A B L E S    E X T E R N E S
+ *  (descriptions déjà donné dans client.c)
+ */
+
+// Configuration réseau
 extern short PORT_SRV_APP;
 extern char IP_SERVICE[100];
 
+// Données utilisateurs
 extern users_t hotes;
 extern users_t clients_app; 
 extern users_t clients; 
 extern user_t hote_serv_app;  
 
+// État du jeu
 extern game_state_t game_state; 
 
+// Timers d'état
 extern double startCountdownTime;
 extern double endScreenTime;
 extern double nextCountdownTime; 
 
+// Identité du joueur
 extern name_t pseudo;
 extern name_t pseudo_next_player; 
 
+// Drapeaux de tour de jeu
 extern bool next_player; 
 
+// Cartes
 extern map_t maps[MAX_MAPS];
 extern int current_map;
 
+// Caméra et tir
 extern cam_mode_t camera_mode;
 extern bool aiming;  // en train de viser pour tirer
 extern float shoot_puissance;
 extern Vector3 shoot_direction;
 extern Vector2 mouse_delta;
-
 extern bool can_shoot;  // on peut tirer ou non
-
-
 extern bool set_ball_pos_envoye;
 
+// Balles
 extern ball_t balls[MAX_USERS];
 extern int my_ball_index;  // -1 = pas trouvé, sinon index
 
+// Podium
 extern int scores[NB_JOUEURS_MAX][NB_MANCHE]; // Podium
 
-
+/*
+*****************************************************************************************
+ *	\noop		I M P L E M E N T A T I O N   DES   F O N C T I O N S
+ */
 
 #pragma region LIST
 
+/**
+ * \fn void renderList()
+ * \brief Rendue de l'écran de liste des hôtes disponibles
+ */
 void renderLIST(){
     BeginDrawing();
 
@@ -88,6 +116,10 @@ void renderLIST(){
 
 #pragma region LOBBY
 
+/**
+ * \fn void renderLOBBY()
+ * \brief Rendue de l'écran de lobby pour l'hôte (liste des joueurs connectés, bouton START)
+ */
 void renderLOBBY(){
     BeginDrawing();
 
@@ -139,6 +171,10 @@ void renderLOBBY(){
 
 #pragma region LOBBY Client
 
+/**
+ * \fn void renderLOBBYClt()
+ * \brief Rendue de l'écran de lobby pour le client (liste des joueurs, bouton QUITTER)
+ */
 void renderLOBBYClt(){
     BeginDrawing();
 
@@ -177,6 +213,10 @@ void renderLOBBYClt(){
 
 #pragma region START
 
+/**
+ * \fn void renderSTART()
+ * \brief Rendue de l'écran de départ avec un compte à rebours de 3 secondes avant le début de partie
+ */
 void renderSTART(){
     // partie affichage
     BeginDrawing();
@@ -206,6 +246,10 @@ void renderSTART(){
 
 #pragma region GAME
 
+/**
+ * \fn void renderGAME()
+ * \brief Rendue de l'écran de jeu (scène 3D, balles, visée, IHM hôte, indicateur de tour)
+ */
 void renderGAME(){
     // partie affichage
 
@@ -312,6 +356,10 @@ void renderGAME(){
 
 #pragma region END
 
+/**
+ * \fn void renderEND()
+ * \brief Rendue de l'écran de fin de partie
+ */
 void renderEND(){
 
     // partie affichage
@@ -336,6 +384,10 @@ void renderEND(){
 
 #pragma region NEXT
 
+/**
+ * \fn void renderNEXT()
+ * \brief Rendue de l'écran de transition entre deux manches avec compte à rebours
+ */
 void renderNEXT(){
     // partie affichage
     BeginDrawing();
@@ -365,6 +417,10 @@ void renderNEXT(){
 
 #pragma region PODIUM
 
+/**
+ * \fn void renderPODIUM()
+ * \brief Rendue de l'écran du podium avec le tableau des scores par manche et le total
+ */
 void renderPODIUM(){
 
     int nbUsers = estHote() ? clients_app.nbUsers : clients.nbUsers; 

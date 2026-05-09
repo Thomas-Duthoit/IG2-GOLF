@@ -1,11 +1,35 @@
+/**
+ * \file physic.c
+ * \brief Gestion de la physique des balles (mouvement, gravité, rebonds, friction, trou)
+ * \author Thomas DUTHOIT && Cloé GREBERT
+ * \date 9 mai 2026
+ * \version 1.0
+ */
 #include "physic.h"
+
+/*
+*****************************************************************************************
+ *	\noop		P R O T O T Y P E S   DES   F O N C T I O N S   I N T E R N E S
+ */
 
 // Prototype fonction interne
 void checkArret(ground_info_t ground_info, ball_t * ball);  
 void updateValue(ground_info_t ground_info, Vector3 * pos_th, ball_t * ball, float dt);   
 
+/*
+*****************************************************************************************
+ *	\noop		I M P L E M E N T A T I O N   DES   F O N C T I O N S
+ */
 
 
+/**
+ * \fn void init_pos_ball(ball_t * ball, float startX, float startZ, float startY)
+ * \brief Initialise la position et l'état d'une balle sur la carte
+ * \param ball   Pointeur vers la balle à initialiser
+ * \param startX Position X de départ
+ * \param startZ Position Z de départ
+ * \param startY Position Y de départ (hauteur du sol au point de départ)
+ */
 void init_pos_ball(ball_t * ball, float startX, float startZ, float startY){
     // Mise en place des positions initiales à l'horizontal
     ball->pos.x = startX; 
@@ -34,6 +58,13 @@ void init_pos_ball(ball_t * ball, float startX, float startZ, float startY){
 
 
 
+/**
+ * \fn void update_ball_mov(ball_t * ball, double dt, map_t * map)
+ * \brief Met à jour le mouvement de la balle pour une frame (gravité, collisions, friction)
+ * \param ball Pointeur vers la balle
+ * \param dt   Delta temps de la frame (en secondes)
+ * \param map  Pointeur vers la carte (pour les informations de sol)
+ */
 void update_ball_mov(ball_t * ball, double dt, map_t * map){
     Vector3 pos_th; // position théorique calculée
     ground_info_t ground_info; // information du sol
@@ -73,6 +104,12 @@ void update_ball_mov(ball_t * ball, double dt, map_t * map){
 
 
 
+/**
+ * \fn void isInHole(ball_t * ball, map_t * map)
+ * \brief Vérifie si la balle est suffisamment proche et lente pour être considérée dans le trou
+ * \param ball Pointeur vers la balle
+ * \param map  Pointeur vers la carte
+ */
 void isInHole(ball_t * ball, map_t * map){
     ground_info_t ground_info; 
 
@@ -94,11 +131,17 @@ void isInHole(ball_t * ball, map_t * map){
 
 
 
-/*-------------------------INTERNE------------------------*/
+/*
+*****************************************************************************************
+ *	\noop		F O N C T I O N S   I N T E R N E S
+ */
 
-
-
-
+/**
+ * \fn void checkArret(ground_info_t ground_info, ball_t * ball)
+ * \brief Arrête la balle si la vitesse et le gradient de pente sont négligeables
+ * \param ground_info Informations du sol à la position courante de la balle
+ * \param ball        Pointeur vers la balle
+ */
 void checkArret(ground_info_t ground_info, ball_t * ball){
 
     if( (fabs(ground_info.grad_x) < EPSILON_GRAD) && (fabs(ground_info.grad_z) < EPSILON_GRAD) && (fabs(ball->vel.x) <  EPSILON_VEL) && (fabs(ball->vel.y) <  EPSILON_VEL) && (fabs(ball->vel.z) <  EPSILON_VEL)){
@@ -112,6 +155,14 @@ void checkArret(ground_info_t ground_info, ball_t * ball){
 }
 
 
+/**
+ * \fn void updateValue(ground_info_t ground_info, Vector3 * pos_th, ball_t * ball, float dt)
+ * \brief Résout la collision de la balle avec le sol et applique friction, pente, pendule et rebond
+ * \param ground_info Informations du sol à la position courante
+ * \param pos_th      Pointeur vers la position théorique (modifiée en sortie si collision)
+ * \param ball        Pointeur vers la balle
+ * \param dt          Delta temps de la frame (en secondes)
+ */
 void updateValue(ground_info_t ground_info, Vector3 * pos_th, ball_t * ball, float dt){
 
     if(pos_th->y < ground_info.y + BALL_RADIUS){

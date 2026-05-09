@@ -1,3 +1,11 @@
+/**
+ * \file users.c
+ * \brief Gestion des utilisateurs (création, identification, état, persistance)
+ * \author Thomas DUTHOIT && Cloé GREBERT
+ * \date 9 mai 2026
+ * \version 1.0
+ */
+
 #include <string.h>
 #include <arpa/inet.h>
 #include "reqRep.h"
@@ -19,7 +27,27 @@
  */
 #define CHECK_NULL(sts, msg) if ((sts)==NULL) {perror(msg); exit(-1);}
 
+/*
+*****************************************************************************************
+ *	\noop		D E C L A R A T I O N   DES   V A R I A B L E S   G L O B A L E S
+ */
+/**
+ * \var users
+ * \brief Structure globale contenant la liste des utilisateurs enregistrés
+ */
 users_t users;
+
+/*
+*****************************************************************************************
+ *	\noop		I M P L E M E N T A T I O N   DES   F O N C T I O N S
+ */
+
+ /**
+ * \fn int afficherUsers(char *cde)
+ * \brief Affiche la liste des utilisateurs avec leur état
+ * \param cde Chaîne indiquant le contexte d'appel (ex: "créer", "identifier")
+ * \return Aucun retour significatif
+ */
 int afficherUsers(char *cde) {
 	printf("[%s] Liste des users [%d]\n", cde, users.nbUsers);	
 	for (int i=0; i < users.nbUsers; i++)
@@ -27,7 +55,13 @@ int afficherUsers(char *cde) {
 				i,users.tab[i].name,users.tab[i].etat);
 }
 
-// recherche dans la liste des joueurs enregistrés
+
+/**
+ * \fn int trouverUser(name_t nom)
+ * \brief Recherche un utilisateur dans la liste par son nom
+ * \param nom Nom de l'utilisateur à rechercher
+ * \return Index de l'utilisateur s'il existe, -1 sinon
+ */
 int trouverUser(name_t nom) {
 	int i=0;
 	for (i=0; i < MAX_USERS; i++)
@@ -37,7 +71,14 @@ int trouverUser(name_t nom) {
 }
 
 
-// crée un user_t et l'enregistre dans les joueurs connectés
+/**
+ * \fn int creerUser(name_t nom, char * adrIP, short port)
+ * \brief Crée un nouvel utilisateur et l'ajoute à la liste
+ * \param nom Nom de l'utilisateur
+ * \param adrIP Adresse IP de l'utilisateur
+ * \param port Port du serveur applicatif associé
+ * \return Index du nouvel utilisateur, -1 si la liste est pleine
+ */
 int creerUser(name_t nom, char * adrIP, short port) {
 	if (users.nbUsers == MAX_USERS) 
 		return -1;
@@ -61,7 +102,14 @@ int creerUser(name_t nom, char * adrIP, short port) {
 	return users.nbUsers-1;
 }
 
-// enregistre une connection de joueur (met à jour / crée le joueur)
+/**
+ * \fn int identifierUser(char * userName, char * adrIP, short port)
+ * \brief Identifie un utilisateur : le crée s'il n'existe pas ou met à jour ses informations
+ * \param userName Nom de l'utilisateur
+ * \param adrIP Adresse IP de l'utilisateur
+ * \param port Port du serveur applicatif
+ * \return Index de l'utilisateur
+ */
 int identifierUser(char * userName, char * adrIP, short port) {
 	requete_t req;
 	int index = -1;
@@ -83,7 +131,11 @@ int identifierUser(char * userName, char * adrIP, short port) {
 	return index;
 } 
 
-// déconnecte l'utilisateur et ferme la socket
+/**
+ * \fn void deconnecterUser(int indUser)
+ * \brief Déconnecte un utilisateur et libère ses ressources
+ * \param indUser Index de l'utilisateur à déconnecter
+ */
 void deconnecterUser(int indUser) {
 	//printf(
 	//	"Déconnexion : User [%s]\n",
@@ -100,7 +152,12 @@ void deconnecterUser(int indUser) {
 	afficherUsers("déconnecter");
 }
 
-// change l'état d'un joueur
+/**
+ * \fn void modifierEtat(int indUser, etat_joueur_t etat)
+ * \brief Modifie l'état d'un utilisateur
+ * \param indUser Index de l'utilisateur
+ * \param etat Nouvel état
+ */
 void modifierEtat(int indUser, etat_joueur_t etat) {
 	users.tab[indUser].etat = etat;
 	
@@ -109,6 +166,12 @@ void modifierEtat(int indUser, etat_joueur_t etat) {
 	//return indDest;
 }
 
+/**
+ * \fn char * nameUser(int indUser)
+ * \brief Retourne le nom d'un utilisateur
+ * \param indUser Index de l'utilisateur
+ * \return Nom de l'utilisateur ou NULL si index invalide
+ */
 char * nameUser(int indUser) {
 	if (indUser==-1) 
 		return NULL;
@@ -116,6 +179,10 @@ char * nameUser(int indUser) {
 		return users.tab[indUser].name;
 }
 
+/**
+ * \fn void lireUsers(void)
+ * \brief Charge la liste des utilisateurs depuis un fichier
+ */
 void lireUsers(void) {
 	FILE *fp;
 	CHECK_NULL(fp=fopen("users.dat", "r"), "--fopen()--");
@@ -125,7 +192,10 @@ void lireUsers(void) {
 	afficherUsers("lecture");
 }
 
-
+/**
+ * \fn void ecrireUsers(void)
+ * \brief Sauvegarde la liste des utilisateurs dans un fichier
+ */
 void ecrireUsers(void) {
 	FILE *fp;
 	CHECK_NULL(fp=fopen("users.dat", "w"), "--fopen()--");
@@ -135,7 +205,12 @@ void ecrireUsers(void) {
 	afficherUsers("ecriture");
 }
 
-
+/**
+ * \fn void getListPseudoByState(etat_joueur_t etat, char * listePseudo)
+ * \brief Récupère la liste des pseudos des utilisateurs selon leur état
+ * \param etat État des utilisateurs recherchés
+ * \param listePseudo Buffer de sortie contenant les pseudos séparés par ':'
+ */
 void getListPseudoByState(etat_joueur_t etat, char * listePseudo){ 
 	char * username = (char *)malloc(sizeof(char)*(MAX_NAME+1)); 
 	int flag = 0; 
@@ -158,6 +233,12 @@ void getListPseudoByState(etat_joueur_t etat, char * listePseudo){
 	free(username); 
 }
 
+/**
+ * \fn void getDetailsUser(int indUser, char * detailsUser)
+ * \brief Récupère les informations détaillées d'un utilisateur
+ * \param indUser Index de l'utilisateur
+ * \param detailsUser Buffer de sortie formaté (etat:IP:port)
+ */
 void getDetailsUser(int indUser, char * detailsUser){
 	snprintf(detailsUser, TAILLE_OPT, "%c:%s:%hu", users.tab[indUser].etat, users.tab[indUser].adrIP, users.tab[indUser].port_srv_app); 
 }

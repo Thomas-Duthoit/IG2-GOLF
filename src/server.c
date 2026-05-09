@@ -1,3 +1,11 @@
+/**
+ * \file server.c
+ * \brief Implémentation du serveur d'enregistrement
+ * \author Thomas DUTHOIT && Cloé GREBERT
+ * \date 9 mai 2026
+ * \version 1.0
+ */
+
 #include <stdio.h>
 #include <unistd.h> // POSIX
 #include <stdlib.h>
@@ -17,22 +25,67 @@
 #include "reqRep.h"
 #include "users.h"
 
+/*
+*****************************************************************************************
+ *	\noop		D E F I N I T I O N   DES   C O N S T A N T E S
+ */
 
+/**
+ * \def defaultAdrPort
+ * \brief Adresse d'écoute par défaut du serveur (toutes les interfaces)
+ */
 #define defaultAdrPort "0.0.0.0"
+
+/**
+ * \def defaultPort
+ * \brief Port d'écoute par défaut (0 = attribution automatique par l'OS)
+ */
 #define defaultPort 0
 
-void installSigServer(int sigNum);
 
+/*
+*****************************************************************************************
+ *	\noop		D E C L A R A T I O N   DES   V A R I A B L E S    G L O B A L E S
+ */
 
-
-
+/**
+ * \var se
+ * \brief Socket d'écoute principale du serveur d'enregistrement
+ */
 socket_t se; 
 
 
-// mutex pour la gestion des utilisateurs
+/**
+ * \var MUT_USER_MANAGEMENT
+ * \brief Mutex protégeant les accès concurrents à la liste des utilisateurs enregistrés
+ */
 pthread_mutex_t MUT_USER_MANAGEMENT = PTHREAD_MUTEX_INITIALIZER;
 
 
+/*
+*****************************************************************************************
+ *	\noop		P R O T O T Y P E S   DES   F O N C T I O N S
+ */
+/**
+ * \fn void installSigServer(int sigNum)
+ * \brief Installe le gestionnaire de signal pour le serveur
+ * \param sigNum Numéro du signal à intercepter
+ */
+void installSigServer(int sigNum);
+
+
+/*
+*****************************************************************************************
+ *	\noop		I M P L E M E N T A T I O N   DES   F O N C T I O N S
+ */
+
+/**
+ * \fn int main(int argc, char ** argv)
+ * \brief Fonction principale du serveur d'enregistrement
+ * \param argc Nombre d'arguments de ligne de commande
+ * \param argv Tableau des arguments (argv[1] = adresse IP, argv[2] = port)
+ * \return Code de retour du programme
+ */
 int main(int argc, char ** argv) {
     socket_t sd;
 
@@ -77,6 +130,11 @@ int main(int argc, char ** argv) {
 
 
 
+/**
+ * \fn void deroute (int sigNum)
+ * \brief Gestionnaire de signal du serveur (SIGCHLD et SIGUSR1)
+ * \param sigNum Numéro du signal reçu
+ */
 void deroute (int sigNum) {
     int status;
     switch (sigNum) {
@@ -93,6 +151,11 @@ void deroute (int sigNum) {
 }
 
 
+/**
+ * \fn void installSigServer(int sigNum)
+ * \brief Installe un gestionnaire de signal via sigaction
+ * \param sigNum Numéro du signal à intercepter
+ */
 void installSigServer(int sigNum) {
     struct sigaction newAct;
     newAct.sa_handler = deroute;
